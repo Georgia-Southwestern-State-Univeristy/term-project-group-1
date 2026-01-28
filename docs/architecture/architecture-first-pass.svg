@@ -1,0 +1,175 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700">
+  <defs>
+    <!-- Arrow marker -->
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+    </marker>
+    <marker id="arrowhead-both" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+    </marker>
+    <!-- Drop shadow filter -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.15"/>
+    </filter>
+    <!-- Cylinder gradient for data stores -->
+    <linearGradient id="cylinderGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1"/>
+      <stop offset="50%" style="stop-color:#fcd34d;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#fbbf24;stop-opacity:1"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="700" fill="#f8fafc"/>
+  
+  <!-- System boundary box -->
+  <rect x="280" y="120" width="880" height="520" rx="12" ry="12" 
+        fill="#f1f5f9" stroke="#94a3b8" stroke-width="2" stroke-dasharray="8,4"/>
+  <text x="300" y="155" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#475569">
+    System: Real-time Call Co-pilot
+  </text>
+  
+  <!-- Person: Agent/Analyst -->
+  <g filter="url(#shadow)">
+    <rect x="30" y="200" width="160" height="100" rx="8" ry="8" fill="#3b82f6"/>
+    <text x="110" y="235" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="white" text-anchor="middle">Person</text>
+    <text x="110" y="255" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="white" text-anchor="middle">Agent/Analyst</text>
+  </g>
+  
+  <!-- Person: Compliance Officer -->
+  <g filter="url(#shadow)">
+    <rect x="30" y="480" width="160" height="100" rx="8" ry="8" fill="#3b82f6"/>
+    <text x="110" y="515" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="white" text-anchor="middle">Person</text>
+    <text x="110" y="535" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="white" text-anchor="middle">Compliance Officer</text>
+  </g>
+  
+  <!-- Container: Web UI -->
+  <g filter="url(#shadow)">
+    <rect x="310" y="180" width="180" height="120" rx="8" ry="8" fill="#10b981"/>
+    <text x="400" y="210" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="white" text-anchor="middle">Container</text>
+    <text x="400" y="230" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="white" text-anchor="middle">Web UI (Next.js)</text>
+    <text x="400" y="252" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#d1fae5" text-anchor="middle">Agent dashboard: transcript,</text>
+    <text x="400" y="267" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#d1fae5" text-anchor="middle">checklist, sentiment +</text>
+    <text x="400" y="282" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#d1fae5" text-anchor="middle">threat score</text>
+  </g>
+  
+  <!-- Container: Backend API -->
+  <g filter="url(#shadow)">
+    <rect x="310" y="400" width="180" height="120" rx="8" ry="8" fill="#10b981"/>
+    <text x="400" y="430" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="white" text-anchor="middle">Container</text>
+    <text x="400" y="450" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="white" text-anchor="middle">Backend API</text>
+    <text x="400" y="472" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#d1fae5" text-anchor="middle">Auth, session mgmt,</text>
+    <text x="400" y="487" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#d1fae5" text-anchor="middle">orchestration</text>
+  </g>
+  
+  <!-- Container: Analysis Orchestrator -->
+  <g filter="url(#shadow)">
+    <rect x="580" y="320" width="180" height="120" rx="8" ry="8" fill="#10b981"/>
+    <text x="670" y="350" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="white" text-anchor="middle">Container</text>
+    <text x="670" y="370" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="white" text-anchor="middle">Analysis Orchestrator</text>
+    <text x="670" y="392" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#d1fae5" text-anchor="middle">Routes audio/text to services</text>
+    <text x="670" y="407" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#d1fae5" text-anchor="middle">Aggregates results</text>
+  </g>
+  
+  <!-- External: Speech-to-Text API -->
+  <g filter="url(#shadow)">
+    <rect x="850" y="170" width="170" height="80" rx="8" ry="8" fill="#f97316"/>
+    <text x="935" y="195" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="white" text-anchor="middle">External</text>
+    <text x="935" y="215" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">Speech-to-Text API</text>
+  </g>
+  
+  <!-- External: Sentiment/Emotion API -->
+  <g filter="url(#shadow)">
+    <rect x="850" y="270" width="170" height="80" rx="8" ry="8" fill="#f97316"/>
+    <text x="935" y="295" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="white" text-anchor="middle">External</text>
+    <text x="935" y="315" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">Sentiment/Emotion API</text>
+  </g>
+  
+  <!-- External: LLM API -->
+  <g filter="url(#shadow)">
+    <rect x="850" y="370" width="170" height="95" rx="8" ry="8" fill="#f97316"/>
+    <text x="935" y="395" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="white" text-anchor="middle">External</text>
+    <text x="935" y="415" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">LLM API</text>
+    <text x="935" y="435" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#fed7aa" text-anchor="middle">Policy interpretation</text>
+    <text x="935" y="450" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#fed7aa" text-anchor="middle">+ guidance</text>
+  </g>
+  
+  <!-- Data Store: Policy Store (cylinder shape) -->
+  <g filter="url(#shadow)">
+    <ellipse cx="935" cy="505" rx="75" ry="15" fill="#eab308"/>
+    <rect x="860" y="505" width="150" height="70" fill="#fbbf24"/>
+    <ellipse cx="935" cy="575" rx="75" ry="15" fill="#fbbf24" stroke="#eab308" stroke-width="1"/>
+    <ellipse cx="935" cy="505" rx="75" ry="15" fill="#fcd34d"/>
+    <text x="935" y="535" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#78350f" text-anchor="middle">Container</text>
+    <text x="935" y="552" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="700" fill="#78350f" text-anchor="middle">Policy Store</text>
+    <text x="935" y="568" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#92400e" text-anchor="middle">Docs + extracted text</text>
+  </g>
+  
+  <!-- Data Store: App Data Store (cylinder shape) -->
+  <g filter="url(#shadow)">
+    <ellipse cx="670" cy="515" rx="75" ry="15" fill="#eab308"/>
+    <rect x="595" y="515" width="150" height="80" fill="#fbbf24"/>
+    <ellipse cx="670" cy="595" rx="75" ry="15" fill="#fbbf24" stroke="#eab308" stroke-width="1"/>
+    <ellipse cx="670" cy="515" rx="75" ry="15" fill="#fcd34d"/>
+    <text x="670" y="545" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#78350f" text-anchor="middle">Container</text>
+    <text x="670" y="562" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="700" fill="#78350f" text-anchor="middle">App Data Store</text>
+    <text x="670" y="578" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#92400e" text-anchor="middle">Calls, scores, audit trail</text>
+  </g>
+  
+  <!-- Arrows and connections -->
+  
+  <!-- Agent to Web UI -->
+  <line x1="190" y1="250" x2="305" y2="240" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="230" y="230" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">uses</text>
+  
+  <!-- Compliance to API -->
+  <line x1="190" y1="530" x2="305" y2="480" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="210" y="490" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">uploads policies</text>
+  
+  <!-- Web UI to API (HTTPS) -->
+  <line x1="400" y1="300" x2="400" y2="395" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="410" y="350" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">HTTPS</text>
+  
+  <!-- Web UI to API (bidirectional SSE/WebSocket) -->
+  <line x1="330" y1="300" x2="330" y2="395" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="340" y1="395" x2="340" y2="300" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="260" y="340" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#64748b">SSE/WebSocket</text>
+  <text x="260" y="352" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#64748b">(real-time updates)</text>
+  
+  <!-- API to Orchestrator -->
+  <line x1="490" y1="460" x2="575" y2="400" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="500" y="418" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">events/queue</text>
+  
+  <!-- Orchestrator to Speech-to-Text -->
+  <line x1="760" y1="350" x2="845" y2="230" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="780" y="275" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">audio chunks</text>
+  
+  <!-- Orchestrator to Sentiment -->
+  <line x1="760" y1="370" x2="845" y2="320" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="785" y="335" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">text</text>
+  
+  <!-- Orchestrator to LLM -->
+  <line x1="760" y1="400" x2="845" y2="410" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="775" y="395" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">prompt/context</text>
+  
+  <!-- Orchestrator to Policy Store -->
+  <line x1="760" y1="420" x2="860" y2="520" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="785" y="475" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">read policies</text>
+  
+  <!-- Orchestrator to Data Store -->
+  <line x1="670" y1="440" x2="670" y2="498" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="678" y="475" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">write results</text>
+  
+  <!-- Legend -->
+  <g transform="translate(30, 620)">
+    <text x="0" y="0" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#374151">Legend:</text>
+    <rect x="80" y="-12" width="20" height="14" rx="3" fill="#3b82f6"/>
+    <text x="105" y="0" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#374151">Person</text>
+    <rect x="170" y="-12" width="20" height="14" rx="3" fill="#10b981"/>
+    <text x="195" y="0" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#374151">Container</text>
+    <rect x="275" y="-12" width="20" height="14" rx="3" fill="#f97316"/>
+    <text x="300" y="0" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#374151">External Service</text>
+    <rect x="415" y="-12" width="20" height="14" rx="3" fill="#fbbf24"/>
+    <text x="440" y="0" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#374151">Data Store</text>
+  </g>
+</svg>
