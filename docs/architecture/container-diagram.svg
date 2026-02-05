@@ -1,0 +1,208 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 740">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#8aa4ff"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#6fe3b5"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#d6a7ff"/>
+    </marker>
+    <filter id="glow-blue" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="#8aa4ff" flood-opacity="0.15" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-green" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="#6fe3b5" flood-opacity="0.15" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-purple" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="#d6a7ff" flood-opacity="0.15" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="740" fill="#0f1219" rx="8"/>
+
+  <!-- System boundary -->
+  <rect x="40" y="40" width="780" height="660" rx="16" ry="16"
+        fill="none" stroke="#334155" stroke-width="1.5" stroke-dasharray="10,5"/>
+  <rect x="52" y="26" width="420" height="28" fill="#0f1219"/>
+  <text x="60" y="47" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#94a3b8" letter-spacing="0.5">
+    System: Real-time Call Co-pilot (Prototype)
+  </text>
+
+  <!-- ==================== CONTAINERS ==================== -->
+
+  <!-- Web UI -->
+  <g filter="url(#glow-blue)">
+    <rect x="70" y="190" width="200" height="130" rx="10" ry="10"
+          fill="#1f2a44" stroke="#8aa4ff" stroke-width="1.5"/>
+    <text x="170" y="222" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="500" fill="#8aa4ff" text-anchor="middle" letter-spacing="1">CONTAINER</text>
+    <text x="170" y="244" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">Web UI (Next.js)</text>
+    <text x="170" y="268" font-family="Inter, system-ui, sans-serif" font-size="10.5" fill="#94a3b8" text-anchor="middle">Dashboard: transcript, checklist,</text>
+    <text x="170" y="284" font-family="Inter, system-ui, sans-serif" font-size="10.5" fill="#94a3b8" text-anchor="middle">sentiment, threat score</text>
+  </g>
+
+  <!-- Backend API -->
+  <g filter="url(#glow-blue)">
+    <rect x="340" y="190" width="200" height="130" rx="10" ry="10"
+          fill="#1f2a44" stroke="#8aa4ff" stroke-width="1.5"/>
+    <text x="440" y="222" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="500" fill="#8aa4ff" text-anchor="middle" letter-spacing="1">CONTAINER</text>
+    <text x="440" y="244" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">Backend API</text>
+    <text x="440" y="268" font-family="Inter, system-ui, sans-serif" font-size="10.5" fill="#94a3b8" text-anchor="middle">Session mgmt, auth (prototype),</text>
+    <text x="440" y="284" font-family="Inter, system-ui, sans-serif" font-size="10.5" fill="#94a3b8" text-anchor="middle">streaming endpoint</text>
+  </g>
+
+  <!-- Analysis Orchestrator -->
+  <g filter="url(#glow-blue)">
+    <rect x="610" y="190" width="200" height="130" rx="10" ry="10"
+          fill="#1f2a44" stroke="#8aa4ff" stroke-width="1.5"/>
+    <text x="710" y="222" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="500" fill="#8aa4ff" text-anchor="middle" letter-spacing="1">CONTAINER</text>
+    <text x="710" y="244" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">Analysis Orchestrator</text>
+    <text x="710" y="268" font-family="Inter, system-ui, sans-serif" font-size="10.5" fill="#94a3b8" text-anchor="middle">Chunking, routing, aggregation,</text>
+    <text x="710" y="284" font-family="Inter, system-ui, sans-serif" font-size="10.5" fill="#94a3b8" text-anchor="middle">rate-limit handling</text>
+  </g>
+
+  <!-- ==================== DATA STORES (cylinder) ==================== -->
+
+  <!-- App Data Store -->
+  <g filter="url(#glow-green)">
+    <ellipse cx="330" cy="490" rx="95" ry="16" fill="#1a4434" stroke="#6fe3b5" stroke-width="1.5"/>
+    <rect x="235" y="490" width="190" height="90" fill="#163b2a" stroke="#6fe3b5" stroke-width="1.5" stroke-dasharray="0"/>
+    <line x1="235" y1="490" x2="235" y2="580" stroke="#6fe3b5" stroke-width="1.5"/>
+    <line x1="425" y1="490" x2="425" y2="580" stroke="#6fe3b5" stroke-width="1.5"/>
+    <ellipse cx="330" cy="580" rx="95" ry="16" fill="#163b2a" stroke="#6fe3b5" stroke-width="1.5"/>
+    <ellipse cx="330" cy="490" rx="95" ry="16" fill="#1e4d3a" stroke="#6fe3b5" stroke-width="1.5"/>
+    <text x="330" y="520" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="500" fill="#6fe3b5" text-anchor="middle" letter-spacing="1">CONTAINER</text>
+    <text x="330" y="540" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#ffffff" text-anchor="middle">App Data Store</text>
+    <text x="330" y="560" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Calls, scores, events, audit trail</text>
+  </g>
+
+  <!-- Policy Store -->
+  <g filter="url(#glow-green)">
+    <ellipse cx="620" cy="490" rx="95" ry="16" fill="#1a4434" stroke="#6fe3b5" stroke-width="1.5"/>
+    <rect x="525" y="490" width="190" height="90" fill="#163b2a" stroke="#6fe3b5" stroke-width="1.5"/>
+    <line x1="525" y1="490" x2="525" y2="580" stroke="#6fe3b5" stroke-width="1.5"/>
+    <line x1="715" y1="490" x2="715" y2="580" stroke="#6fe3b5" stroke-width="1.5"/>
+    <ellipse cx="620" cy="580" rx="95" ry="16" fill="#163b2a" stroke="#6fe3b5" stroke-width="1.5"/>
+    <ellipse cx="620" cy="490" rx="95" ry="16" fill="#1e4d3a" stroke="#6fe3b5" stroke-width="1.5"/>
+    <text x="620" y="520" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="500" fill="#6fe3b5" text-anchor="middle" letter-spacing="1">CONTAINER</text>
+    <text x="620" y="540" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#ffffff" text-anchor="middle">Policy Store</text>
+    <text x="620" y="558" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Policy docs + extracted text</text>
+    <text x="620" y="572" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">+ structured checklist</text>
+  </g>
+
+  <!-- ==================== EXTERNAL SYSTEMS ==================== -->
+
+  <!-- Speech-to-Text API -->
+  <g filter="url(#glow-purple)">
+    <rect x="910" y="100" width="210" height="95" rx="10" ry="10"
+          fill="#3a244a" stroke="#d6a7ff" stroke-width="1.5"/>
+    <text x="1015" y="128" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="500" fill="#d6a7ff" text-anchor="middle" letter-spacing="1">EXTERNAL SYSTEM</text>
+    <text x="1015" y="152" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">Speech-to-Text API</text>
+  </g>
+
+  <!-- Sentiment/Emotion API -->
+  <g filter="url(#glow-purple)">
+    <rect x="910" y="225" width="210" height="95" rx="10" ry="10"
+          fill="#3a244a" stroke="#d6a7ff" stroke-width="1.5"/>
+    <text x="1015" y="253" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="500" fill="#d6a7ff" text-anchor="middle" letter-spacing="1">EXTERNAL SYSTEM</text>
+    <text x="1015" y="277" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">Sentiment/Emotion API</text>
+  </g>
+
+  <!-- LLM API -->
+  <g filter="url(#glow-purple)">
+    <rect x="910" y="350" width="210" height="105" rx="10" ry="10"
+          fill="#3a244a" stroke="#d6a7ff" stroke-width="1.5"/>
+    <text x="1015" y="378" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="500" fill="#d6a7ff" text-anchor="middle" letter-spacing="1">EXTERNAL SYSTEM</text>
+    <text x="1015" y="402" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">LLM API</text>
+    <text x="1015" y="424" font-family="Inter, system-ui, sans-serif" font-size="10.5" fill="#94a3b8" text-anchor="middle">Guidance + checklist mapping</text>
+  </g>
+
+  <!-- ==================== CONNECTIONS ==================== -->
+
+  <!-- UI → API  (HTTPS) -->
+  <line x1="270" y1="240" x2="335" y2="240" stroke="#8aa4ff" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <rect x="282" y="220" width="42" height="16" rx="4" fill="#0f1219" opacity="0.85"/>
+  <text x="303" y="232" font-family="Inter, system-ui, sans-serif" font-size="9.5" fill="#8aa4ff" text-anchor="middle">HTTPS</text>
+
+  <!-- API ↔ UI  (SSE/WebSocket) -->
+  <line x1="335" y1="272" x2="275" y2="272" stroke="#8aa4ff" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <line x1="270" y1="280" x2="335" y2="280" stroke="#8aa4ff" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <rect x="270" y="286" width="80" height="28" rx="4" fill="#0f1219" opacity="0.85"/>
+  <text x="310" y="298" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#8aa4ff" text-anchor="middle">SSE / WebSocket</text>
+  <text x="310" y="310" font-family="Inter, system-ui, sans-serif" font-size="8.5" fill="#64748b" text-anchor="middle">(real-time updates)</text>
+
+  <!-- API → ORCH (events/requests) -->
+  <line x1="540" y1="255" x2="605" y2="255" stroke="#8aa4ff" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <rect x="541" y="235" width="60" height="16" rx="4" fill="#0f1219" opacity="0.85"/>
+  <text x="571" y="247" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#8aa4ff" text-anchor="middle">events / req</text>
+
+  <!-- ORCH → STT (audio/text chunks) -->
+  <path d="M 810 220 Q 860 175, 905 150" fill="none" stroke="#d6a7ff" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <rect x="830" y="158" width="82" height="16" rx="4" fill="#0f1219" opacity="0.85"/>
+  <text x="871" y="170" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#d6a7ff" text-anchor="middle">audio/text chunks</text>
+
+  <!-- ORCH → SENT (transcript) -->
+  <line x1="810" y1="260" x2="905" y2="268" stroke="#d6a7ff" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <rect x="830" y="246" width="56" height="16" rx="4" fill="#0f1219" opacity="0.85"/>
+  <text x="858" y="258" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#d6a7ff" text-anchor="middle">transcript</text>
+
+  <!-- ORCH → LLM (policy context + transcript) -->
+  <path d="M 810 290 Q 860 340, 905 380" fill="none" stroke="#d6a7ff" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <rect x="810" y="325" width="110" height="16" rx="4" fill="#0f1219" opacity="0.85"/>
+  <text x="865" y="337" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#d6a7ff" text-anchor="middle">policy context + transcript</text>
+
+  <!-- ORCH → STORE (write) -->
+  <path d="M 660 320 Q 560 400, 400 480" fill="none" stroke="#6fe3b5" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <rect x="520" y="388" width="36" height="16" rx="4" fill="#0f1219" opacity="0.85"/>
+  <text x="538" y="400" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#6fe3b5" text-anchor="middle">write</text>
+
+  <!-- ORCH → POLICY (read/write) -->
+  <line x1="710" y1="320" x2="660" y2="475" stroke="#6fe3b5" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <rect x="670" y="388" width="55" height="16" rx="4" fill="#0f1219" opacity="0.85"/>
+  <text x="697" y="400" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#6fe3b5" text-anchor="middle">read/write</text>
+
+  <!-- API → STORE (read) -->
+  <line x1="400" y1="320" x2="350" y2="475" stroke="#6fe3b5" stroke-width="1.5" marker-end="url(#arrow-green)" stroke-dasharray="6,3"/>
+  <rect x="348" y="388" width="32" height="16" rx="4" fill="#0f1219" opacity="0.85"/>
+  <text x="364" y="400" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#6fe3b5" text-anchor="middle">read</text>
+
+  <!-- API → POLICY (read) -->
+  <path d="M 490 320 Q 530 400, 565 475" fill="none" stroke="#6fe3b5" stroke-width="1.5" marker-end="url(#arrow-green)" stroke-dasharray="6,3"/>
+  <rect x="508" y="410" width="32" height="16" rx="4" fill="#0f1219" opacity="0.85"/>
+  <text x="524" y="422" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#6fe3b5" text-anchor="middle">read</text>
+
+  <!-- ==================== LEGEND ==================== -->
+  <g transform="translate(910, 510)">
+    <rect x="0" y="0" width="210" height="140" rx="10" fill="#151a24" stroke="#2a3040" stroke-width="1"/>
+    <text x="15" y="24" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">LEGEND</text>
+
+    <rect x="15" y="38" width="18" height="12" rx="3" fill="#1f2a44" stroke="#8aa4ff" stroke-width="1"/>
+    <text x="40" y="49" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#8aa4ff">Container</text>
+
+    <rect x="15" y="60" width="18" height="12" rx="3" fill="#163b2a" stroke="#6fe3b5" stroke-width="1"/>
+    <text x="40" y="71" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#6fe3b5">Data Store</text>
+
+    <rect x="15" y="82" width="18" height="12" rx="3" fill="#3a244a" stroke="#d6a7ff" stroke-width="1"/>
+    <text x="40" y="93" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#d6a7ff">External System</text>
+
+    <line x1="15" y1="110" x2="33" y2="110" stroke="#8aa4ff" stroke-width="1.5"/>
+    <text x="40" y="114" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">Data flow</text>
+
+    <line x1="15" y1="128" x2="33" y2="128" stroke="#6fe3b5" stroke-width="1.5" stroke-dasharray="6,3"/>
+    <text x="40" y="132" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">Read-only</text>
+  </g>
+</svg>
