@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 
 interface Session {
   sessionId: string;
@@ -11,7 +11,7 @@ export default function CallPage() {
   const [session, setSession] = useState<Session | null>(null);
 
   const startSession = async () => {
-    const res = await fetch('/api/session', { method: 'POST' });
+    const res = await fetch("/api/session", { method: "POST" });
     const data = await res.json();
     setSession(data);
   };
