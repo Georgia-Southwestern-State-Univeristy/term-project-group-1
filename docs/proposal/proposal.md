@@ -5,7 +5,7 @@
 Georgia Southwestern State University  
 CSCI 6320: Advanced Software Engineering  
 Dr. Jonathan Hobbs  
-January 26, 2026  
+January 26, 2026
 
 ---
 
@@ -17,23 +17,23 @@ High-stakes contact centers (medical or security operations) suffer from a visib
 
 ### Target Users
 
-- Medical Call Center Agents  
-- Security Operations Center (SOC) Analysts  
-- Compliance Officers  
+- Medical Call Center Agents
+- Security Operations Center (SOC) Analysts
+- Compliance Officers
 
 ---
 
 ## Core Use Cases
 
-### Scenario A: The *Policy Ingestion*
+### Scenario A: The _Policy Ingestion_
 
 An admin uploads a standard **Credit Card Fraud Script** (PDF) to the dashboard. The system parses the text and automatically generates a **Live Checklist** of five mandatory questions that must be asked during a call.
 
-### Scenario B: The *Co-Pilot Assist*
+### Scenario B: The _Co-Pilot Assist_
 
-An agent accepts a call through the browser. As the caller speaks, the dashboard updates a **Stress Graph** in real time. When the agent asks a required question (e.g., *“Can you verify your last transaction?”*), the system detects the intent and automatically checks the box, confirming compliance.
+An agent accepts a call through the browser. As the caller speaks, the dashboard updates a **Stress Graph** in real time. When the agent asks a required question (e.g., _“Can you verify your last transaction?”_), the system detects the intent and automatically checks the box, confirming compliance.
 
-### Scenario C: The *Threat Alert*
+### Scenario C: The _Threat Alert_
 
 During a call, the caller becomes aggressive and tries to pressure the agent. The **Sentiment Score** spikes to **90% (Red/Critical)**. The dashboard flashes a warning:
 
@@ -61,8 +61,8 @@ This empowers the agent to safely end the call.
 
 ## Non-Goals (Explicitly Out of Scope)
 
-- Telephony integration (no SIP trunks, Twilio, or real phone carriers for Beta)  
-- Video analysis (audio and transcripts only)  
+- Telephony integration (no SIP trunks, Twilio, or real phone carriers for Beta)
+- Video analysis (audio and transcripts only)
 - Custom LLM training (existing APIs like OpenAI will be used)
 
 ---
@@ -71,12 +71,12 @@ This empowers the agent to safely end the call.
 
 ### Assumptions
 
-- The user’s browser (Chrome/Edge) allows microphone access without specialized hardware drivers.  
+- The user’s browser (Chrome/Edge) allows microphone access without specialized hardware drivers.
 - Transcription latency from third-party APIs remains under five seconds for near real-time use.
 
 ### Constraints
 
-- Limited to **Free Tier** rate limits from AI providers, which may restrict test calls to under five minutes.  
+- Limited to **Free Tier** rate limits from AI providers, which may restrict test calls to under five minutes.
 - The application will be **single-tenant** for the Beta (local deployment, not SaaS).
 
 ---
