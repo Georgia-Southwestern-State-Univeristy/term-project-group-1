@@ -57,6 +57,21 @@ All contributors must:
 - Run formatting locally before pushing
 - Fix lint errors before requesting review
 
+### Running checks locally
+
+Run all of these before pushing — they mirror what CI runs on every PR:
+
+```bash
+npm run format       # auto-fix formatting (Prettier)
+npm run format:check # check formatting without modifying files
+npm run lint         # run ESLint
+npx tsc --noEmit     # TypeScript type check
+npm test             # run Jest test suite
+npm run build        # production build
+```
+
+> **Tip:** Run `npm run format` first — it often fixes issues that ESLint would also flag.
+
 ## Tests
 
 New behavior must include:
@@ -65,6 +80,14 @@ New behavior must include:
 - A documented test plan in the PR description
 
 Even minimal tests are acceptable at this stage — but no silent behavior changes.
+
+Tests live in `app/__tests__/` and run with:
+
+```bash
+npm test              # single run
+npm run test:watch    # re-run on file changes (useful during development)
+npm run test:coverage # run with coverage report
+```
 
 ---
 
