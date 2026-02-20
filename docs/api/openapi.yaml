@@ -1,0 +1,207 @@
+openapi: 3.0.3
+info:
+  title: Sentinel Dashboard API
+  version: 0.1.0
+  description: >
+    Week 6 MVP contract focused on Story #1:
+    Admin uploads a compliance policy text file and the system generates a checklist.
+
+servers:
+  - url: http://localhost:3000/api
+
+tags:
+  - name: Policies
+    description: Policy upload and checklist generation
+  - name: Sessions
+    description: Monitoring sessions (ties future work to a policy)
+
+paths:
+  /policies:
+    post:
+      tags: [Policies]
+      summary: Upload a compliance policy text file
+      description: >
+        Accepts a plain-text policy payload and returns a generated checklist.
+        MVP parsing rule: one checklist item per non-empty line.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PolicyUploadRequest"
+            examples:
+              example:
+                value:
+                  name: "Security Verification Protocol"
+                  text: |
+                    Thank you for calling
+                    Verify caller identity
+                    Confirm mailing address
+      responses:
+        "201":
+          description: Policy created with generated checklist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Policy"
+              examples:
+                created:
+                  value:
+                    id: "p_123"
+                    name: "Security Verification Protocol"
+                    createdAt: "2026-02-20T20:10:00Z"
+                    checklist:
+                      - id: "c_1"
+                        policyId: "p_123"
+                        text: "Thank you for calling"
+                        order: 1
+                      - id: "c_2"
+                        policyId: "p_123"
+                        text: "Verify caller identity"
+                        order: 2
+        "400":
+          description: Invalid payload
+
+    get:
+      tags: [Policies]
+      summary: List policies
+      responses:
+        "200":
+          description: Policies list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  policies:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PolicySummary"
+
+  /policies/{policyId}:
+    get:
+      tags: [Policies]
+      summary: Get a policy with checklist
+      parameters:
+        - in: path
+          name: policyId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Policy details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Policy"
+        "404":
+          description: Policy not found
+
+  /sessions:
+    post:
+      tags: [Sessions]
+      summary: Create a monitoring session tied to a policy
+      description: >
+        Creates a session referencing a policy. This anchors later stories
+        (checklist auto-checking, threat score) while keeping Week 6 focused.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSessionRequest"
+            examples:
+              example:
+                value:
+                  policyId: "p_123"
+      responses:
+        "201":
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "404":
+          description: Policy not found
+
+components:
+  schemas:
+    PolicyUploadRequest:
+      type: object
+      required: [name, text]
+      properties:
+        name:
+          type: string
+        text:
+          type: string
+          description: Plain text policy content
+
+    PolicySummary:
+      type: object
+      required: [id, name, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Policy:
+      type: object
+      required: [id, name, createdAt, checklist]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        checklist:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChecklistItem"
+
+    ChecklistItem:
+      type: object
+      required: [id, policyId, text, order]
+      properties:
+        id:
+          type: string
+        policyId:
+          type: string
+        text:
+          type: string
+        order:
+          type: integer
+
+    CreateSessionRequest:
+      type: object
+      required: [policyId]
+      properties:
+        policyId:
+          type: string
+
+    Session:
+      type: object
+      required: [id, policyId, status, createdAt]
+      properties:
+        id:
+          type: string
+        policyId:
+          type: string
+        status:
+          type: string
+          enum: [active, ended]
+        createdAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+security: []
