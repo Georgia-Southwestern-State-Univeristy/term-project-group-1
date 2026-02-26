@@ -12,14 +12,6 @@
 - **Story 5 (Planned):** As a Supervisor, I want to see a final "Composite Threat Score" at the end of a call so that I can quickly audit which calls require a high-priority review.
 **Date:** February 18, 2026
 
-## 1. MVP User Stories
-
-- **Story 1:** As an Admin, I want to upload a compliance policy text file so that the system can generate a live checklist for the agent.
-- **Story 2:** As a Call Center Agent, I want to see my microphone audio transcribed in real-time so that I can verify the system is capturing the conversation.
-- **Story 3:** As a Call Center Agent, I want the system to automatically check off items on my compliance list as I say them so that I can focus on the caller instead of manual data entry.
-- **Story 4:** As a Security Analyst, I want to see a live "Stress Graph" of the caller's voice so that I can identify potential social engineering or aggression immediately.
-- **Story 5:** As a Supervisor, I want to see a final "Composite Threat Score" at the end of a call so that I can quickly audit which calls require a high-priority review.
-
 ## 2. Explicit Non-Goals
 
 - **No Telephony/SIP Integration:** We will not connect to real phone lines; all audio is captured via the browser microphone.
