@@ -10,6 +10,15 @@
 - **Story 3 (In Progress):** As a Call Center Agent, I want the system to automatically check off items on my compliance list as I say them so that I can focus on the caller instead of manual data entry.
 - **Story 4 (Planned):** As a Security Analyst, I want to see a live "Stress Graph" of the caller's voice so that I can identify potential social engineering or aggression immediately.
 - **Story 5 (Planned):** As a Supervisor, I want to see a final "Composite Threat Score" at the end of a call so that I can quickly audit which calls require a high-priority review.
+**Date:** February 18, 2026
+
+## 1. MVP User Stories
+
+- **Story 1:** As an Admin, I want to upload a compliance policy text file so that the system can generate a live checklist for the agent.
+- **Story 2:** As a Call Center Agent, I want to see my microphone audio transcribed in real-time so that I can verify the system is capturing the conversation.
+- **Story 3:** As a Call Center Agent, I want the system to automatically check off items on my compliance list as I say them so that I can focus on the caller instead of manual data entry.
+- **Story 4:** As a Security Analyst, I want to see a live "Stress Graph" of the caller's voice so that I can identify potential social engineering or aggression immediately.
+- **Story 5:** As a Supervisor, I want to see a final "Composite Threat Score" at the end of a call so that I can quickly audit which calls require a high-priority review.
 
 ## 2. Explicit Non-Goals
 
@@ -22,7 +31,7 @@
 1.  **Policy Ingestion (Live):** Use a `curl` command or Postman to upload a raw text policy to `/api/policies`.
 2.  **Checklist Verification (Live):** Observe the API response confirming the text has been parsed into indexed checklist items.
 3.  **Session Anchor (Live):** Create a monitoring session linked to that specific policy ID via `/api/sessions`.
-4.  **Real-time Transcription (Target):** _Functionality currently in development for midterm delivery._
+4.  **Real-time Transcription (Target):** *Functionality currently in development for midterm delivery.*
 
 ## 4. Risks & Mitigation Plan
 
