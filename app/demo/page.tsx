@@ -1,0 +1,414 @@
+"use client";
+
+import { useRef, useState } from "react";
+
+interface Policy {
+  id: string;
+  name: string;
+  checklist: { id: string; text: string }[];
+}
+
+interface Session {
+  id: string;
+  policyId: string;
+  status: string;
+}
+
+interface ChecklistStateRow {
+  itemId: string;
+  text: string;
+  checked: boolean;
+}
+
+/* ── audio buffer helper ─────────────────────── */
+
+function mergeBuffers(
+  lhs: Int16Array<ArrayBufferLike>,
+  rhs: Int16Array<ArrayBufferLike>
+): Int16Array<ArrayBuffer> {
+  const merged = new Int16Array(lhs.length + rhs.length);
+  merged.set(lhs, 0);
+  merged.set(rhs, lhs.length);
+  return merged;
+}
+
+/* ── component ───────────────────────────────── */
+
+export default function DemoPage() {
+  // policy & session state
+  const [policyName, setPolicyName] = useState("");
+  const [policyText, setPolicyText] = useState("");
+  const [policy, setPolicy] = useState<Policy | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+
+  // transcript & checklist state
+  const [transcriptText, setTranscriptText] = useState("");
+  const [checklist, setChecklist] = useState<ChecklistStateRow[]>([]);
+  const [streaming, setStreaming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // mutable refs for audio/ws resources
+  const wsRef = useRef<WebSocket | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const turnsRef = useRef<Record<number, string>>({} as Record<number, string>);
+  const postedTurnsRef = useRef(new Set<number>());
+
+  /* ── API helpers ─────────────────────────────── */
+
+  async function createPolicy() {
+    setError(null);
+    const res = await fetch("/api/policies", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: policyName, text: policyText }),
+    });
+    if (!res.ok) {
+      setError(`Policy creation failed: ${res.status}`);
+      return;
+    }
+    const data = await res.json();
+    setPolicy(data);
+    setSession(null);
+    setChecklist([]);
+    setTranscriptText("");
+  }
+
+  async function createSession() {
+    if (!policy) return;
+    setError(null);
+    const res = await fetch("/api/sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ policyId: policy.id }),
+    });
+    if (!res.ok) {
+      setError(`Session creation failed: ${res.status}`);
+      return;
+    }
+    const data = await res.json();
+    setSession(data);
+    setTranscriptText("");
+    await refreshState(data.id);
+  }
+
+  async function refreshState(sessionId: string) {
+    const res = await fetch(`/api/sessions/${sessionId}/state`);
+    if (!res.ok) return;
+    const data = await res.json();
+    setChecklist(data.checklistState);
+  }
+
+  async function postTranscriptEvent(sessionId: string, text: string) {
+    await fetch(`/api/sessions/${sessionId}/transcript-events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        events: [{ text, isFinal: true, occurredAt: new Date().toISOString() }],
+      }),
+    });
+    await refreshState(sessionId);
+  }
+
+  async function endSession() {
+    if (!session) return;
+    await fetch(`/api/sessions/${session.id}/end`, { method: "POST" });
+    await refreshState(session.id);
+    setSession((s) => (s ? { ...s, status: "ended" } : s));
+  }
+
+  /* ── start/stop streaming ────────────────────── */
+
+  async function startStreaming() {
+    if (!session) return;
+    setError(null);
+
+    // 1. Get temp token
+    const tokenRes = await fetch("/api/assemblyai/token", { method: "POST" });
+    if (!tokenRes.ok) {
+      setError(
+        `Token request failed: ${tokenRes.status}. Is ASSEMBLYAI_API_KEY set?`
+      );
+      return;
+    }
+    const { token } = await tokenRes.json();
+
+    // 2. Request mic permission first
+    let mediaStream: MediaStream;
+    try {
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      setError(`Microphone access failed: ${err}`);
+      return;
+    }
+    streamRef.current = mediaStream;
+
+    // 3. Open WebSocket with sample_rate param
+    const ws = new WebSocket(
+      `wss://streaming.assemblyai.com/v3/ws?sample_rate=16000&formatted_finals=true&token=${token}`
+    );
+    wsRef.current = ws;
+
+    // Reset turn tracking
+    turnsRef.current = {};
+    postedTurnsRef.current = new Set();
+    let maxTurnSeen = -1;
+
+    ws.onopen = async () => {
+      setStreaming(true);
+
+      try {
+        // 4. AudioContext at 16kHz — browser resamples natively
+        const audioCtx = new AudioContext({
+          sampleRate: 16000,
+        });
+        audioCtxRef.current = audioCtx;
+        await audioCtx.audioWorklet.addModule("/worklets/pcm-processor.js");
+
+        const source = audioCtx.createMediaStreamSource(mediaStream);
+        const workletNode = new AudioWorkletNode(audioCtx, "pcm-processor");
+        source.connect(workletNode);
+        workletNode.connect(audioCtx.destination);
+
+        // 5. Buffer audio to ~100ms chunks before sending
+        let audioBufferQueue = new Int16Array(0);
+
+        workletNode.port.onmessage = (event: MessageEvent) => {
+          if (ws.readyState !== WebSocket.OPEN) return;
+
+          const currentBuffer = new Int16Array(
+            event.data.audio_data as ArrayBuffer
+          );
+          audioBufferQueue = mergeBuffers(audioBufferQueue, currentBuffer);
+
+          const bufferDuration =
+            (audioBufferQueue.length / audioCtx.sampleRate) * 1000;
+
+          if (bufferDuration >= 100) {
+            const totalSamples = Math.floor(audioCtx.sampleRate * 0.1);
+            const finalBuffer = new Uint8Array(
+              audioBufferQueue.subarray(0, totalSamples).buffer
+            );
+            audioBufferQueue = audioBufferQueue.subarray(totalSamples);
+            ws.send(finalBuffer);
+          }
+        };
+      } catch (err) {
+        setError(`Audio setup failed: ${err}`);
+        ws.close();
+        setStreaming(false);
+      }
+    };
+
+    // 6. Handle v3 Turn messages
+    ws.onmessage = (event: MessageEvent) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === "Turn") {
+        const { turn_order, transcript, end_of_turn } = msg;
+        const turns = turnsRef.current;
+        const posted = postedTurnsRef.current;
+        turns[turn_order as number] = transcript;
+
+        const fullText = Object.keys(turns)
+          .sort((a, b) => Number(a) - Number(b))
+          .map((k) => turns[Number(k)])
+          .join(" ");
+
+        setTranscriptText(fullText);
+
+        // Post previous turns that ended implicitly (new turn_order appeared)
+        if (turn_order > maxTurnSeen) {
+          for (let t = maxTurnSeen; t >= 0; t--) {
+            if (!posted.has(t) && turns[t]) {
+              posted.add(t);
+              postTranscriptEvent(session.id, turns[t]);
+            }
+          }
+          maxTurnSeen = turn_order;
+        }
+
+        // Post when AssemblyAI explicitly marks turn as ended
+        if (end_of_turn && transcript && !posted.has(turn_order)) {
+          posted.add(turn_order);
+          postTranscriptEvent(session.id, transcript);
+        }
+      }
+    };
+
+    ws.onerror = () => {
+      setError("WebSocket error — check browser console");
+      setStreaming(false);
+    };
+
+    ws.onclose = () => {
+      setStreaming(false);
+    };
+  }
+
+  async function stopStreaming() {
+    // Flush any unposted turns to backend
+    if (session) {
+      const turns = turnsRef.current;
+      const posted = postedTurnsRef.current;
+      for (const key of Object.keys(turns)) {
+        const t = Number(key);
+        if (!posted.has(t) && turns[t]) {
+          posted.add(t);
+          await postTranscriptEvent(session.id, turns[t]);
+        }
+      }
+    }
+
+    // Send terminate and close WS
+    if (wsRef.current) {
+      if (wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: "Terminate" }));
+      }
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+
+    // Stop audio tracks
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+
+    // Close AudioContext
+    if (audioCtxRef.current) {
+      await audioCtxRef.current.close();
+      audioCtxRef.current = null;
+    }
+
+    setStreaming(false);
+    await endSession();
+  }
+
+  /* ── render ──────────────────────────────────── */
+
+  const btnBase =
+    "rounded-md px-4 py-2 text-sm font-medium text-white focus:outline-2 focus:outline-offset-2";
+
+  return (
+    <div className="mx-auto max-w-2xl p-5">
+      <h1 className="mb-6 text-2xl font-bold">Call Co-pilot Demo</h1>
+
+      {error && (
+        <div className="mb-4 rounded bg-red-100 p-3 text-sm text-red-800">
+          {error}
+        </div>
+      )}
+
+      {/* ── Create Policy ─────────────────────── */}
+      <section className="mb-6">
+        <h2 className="mb-2 text-lg font-semibold">1. Create Policy</h2>
+        <input
+          type="text"
+          placeholder="Policy name"
+          value={policyName}
+          onChange={(e) => setPolicyName(e.target.value)}
+          className="mb-2 block w-full rounded border p-2 text-sm"
+        />
+        <textarea
+          placeholder={
+            "One checklist item per line, e.g.:\nVerify caller identity\nConfirm account number\nRead disclosure statement"
+          }
+          value={policyText}
+          onChange={(e) => setPolicyText(e.target.value)}
+          rows={4}
+          className="mb-2 block w-full rounded border p-2 text-sm"
+        />
+        <button
+          onClick={createPolicy}
+          disabled={!policyName.trim() || !policyText.trim()}
+          className={`${btnBase} bg-blue-600 hover:bg-blue-700 disabled:opacity-50`}
+        >
+          Create Policy
+        </button>
+        {policy && (
+          <p className="mt-2 text-sm text-gray-600">
+            Policy created: {policy.name} ({policy.checklist.length} items)
+          </p>
+        )}
+      </section>
+
+      {/* ── Create Session ────────────────────── */}
+      {policy && (
+        <section className="mb-6">
+          <h2 className="mb-2 text-lg font-semibold">2. Create Session</h2>
+          <button
+            onClick={createSession}
+            disabled={!!session}
+            className={`${btnBase} bg-green-600 hover:bg-green-700 disabled:opacity-50`}
+          >
+            Create Session
+          </button>
+          {session && (
+            <p className="mt-2 text-sm text-gray-600">
+              Session: {session.id} ({session.status})
+            </p>
+          )}
+        </section>
+      )}
+
+      {/* ── Checklist ─────────────────────────── */}
+      {session && checklist.length > 0 && (
+        <section className="mb-6">
+          <h2 className="mb-2 text-lg font-semibold">Checklist</h2>
+          <ul className="space-y-1">
+            {checklist.map((item) => (
+              <li key={item.itemId} className="flex items-center gap-2 text-sm">
+                <span
+                  className={item.checked ? "text-green-600" : "text-gray-400"}
+                >
+                  {item.checked ? "[x]" : "[ ]"}
+                </span>
+                <span className={item.checked ? "line-through" : ""}>
+                  {item.text}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* ── Transcription controls ────────────── */}
+      {session && session.status === "active" && (
+        <section className="mb-6">
+          <h2 className="mb-2 text-lg font-semibold">3. Transcription</h2>
+          <div className="flex gap-2">
+            {!streaming ? (
+              <button
+                onClick={startStreaming}
+                className={`${btnBase} bg-green-600 hover:bg-green-700`}
+              >
+                Start
+              </button>
+            ) : (
+              <button
+                onClick={stopStreaming}
+                className={`${btnBase} bg-red-600 hover:bg-red-700`}
+              >
+                Stop
+              </button>
+            )}
+          </div>
+
+          {/* Live transcript */}
+          <div className="mt-4">
+            <h3 className="mb-1 text-sm font-medium">Live Transcript</h3>
+            <div className="min-h-[60px] rounded border bg-gray-50 p-3 text-sm text-gray-900">
+              {transcriptText || (
+                <span className="text-gray-400">
+                  {streaming
+                    ? "Listening..."
+                    : "Press Start to begin transcription"}
+                </span>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
