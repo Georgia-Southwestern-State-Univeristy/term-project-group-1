@@ -1,6 +1,6 @@
 import { Session } from "@/lib/domain/types";
 import { getPolicy } from "@/lib/repositories/policyRepo";
-import { saveSession } from "@/lib/repositories/sessionRepo";
+import { getSession, saveSession } from "@/lib/repositories/sessionRepo";
 
 type CreateSessionResult =
   | { success: true; session: Session }
@@ -21,4 +21,24 @@ export function createSession(policyId: string): CreateSessionResult {
 
   saveSession(session);
   return { success: true, session };
+}
+
+type EndSessionResult =
+  | { success: true; session: Session; alreadyEnded: boolean }
+  | { success: false; error: "not_found" };
+
+export function endSession(sessionId: string): EndSessionResult {
+  const session = getSession(sessionId);
+  if (!session) {
+    return { success: false, error: "not_found" };
+  }
+
+  if (session.status === "ended") {
+    return { success: true, session, alreadyEnded: true };
+  }
+
+  session.status = "ended";
+  session.endedAt = new Date().toISOString();
+  saveSession(session);
+  return { success: true, session, alreadyEnded: false };
 }
