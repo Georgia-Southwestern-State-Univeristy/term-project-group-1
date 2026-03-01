@@ -1,7 +1,7 @@
 # MVP Scope Lock: Sentinel Dashboard
 
 **Team:** Group 1 (Jaxon Doolittle, Ivan Herndon)
-**Date:** February 26, 2026
+**Date:** March 1, 2026
 
 ## 1. MVP User Stories
 
