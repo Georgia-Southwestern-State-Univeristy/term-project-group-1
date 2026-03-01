@@ -35,3 +35,29 @@ export interface PolicyUploadRequest {
 export interface CreateSessionRequest {
   policyId: string;
 }
+
+export interface TranscriptEntry {
+  id: string;
+  sessionId: string;
+  text: string;
+  isFinal: boolean;
+  occurredAt: string;
+  confidence?: number;
+  startMs?: number;
+  endMs?: number;
+}
+
+export interface TranscriptEvent {
+  text: string;
+  isFinal: boolean;
+  occurredAt: string;
+  confidence?: number;
+  startMs?: number;
+  endMs?: number;
+}
+
+export interface ChecklistStateRow {
+  itemId: string;
+  text: string;
+  checked: boolean;
+}
