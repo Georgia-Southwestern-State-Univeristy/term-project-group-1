@@ -13,8 +13,18 @@ Software Engineering project at Georgia Southwestern State University.
   ```
 - **npm** (ships with Node)
 
-No other global tools, databases, or API keys are needed to run the app
-locally.
+## Environment Variables
+
+Create a `.env.local` file in the project root:
+
+```bash
+# Required for real-time transcription (AssemblyAI streaming)
+ASSEMBLYAI_API_KEY=your_api_key_here
+```
+
+Get a key at <https://www.assemblyai.com/dashboard/signup>. The app runs
+without it, but the `/demo` real-time transcription feature will return a
+500 error.
 
 ## Getting Started
 
@@ -23,6 +33,7 @@ git clone <repo-url>
 cd term-project-group-1
 nvm use 22          # ensure correct Node version
 npm install         # install dependencies
+cp .env.example .env.local  # add your ASSEMBLYAI_API_KEY
 npm run dev         # start dev server → http://localhost:3000
 ```
 
@@ -57,13 +68,29 @@ If all five pass, your branch is ready for a PR.
 
 ## API Routes
 
-| Method | Endpoint                   | Description                                   |
-| ------ | -------------------------- | --------------------------------------------- |
-| POST   | `/api/session`             | Create a call session (legacy stub)           |
-| POST   | `/api/policies`            | Upload policy text → auto-generates checklist |
-| GET    | `/api/policies`            | List all policies                             |
-| GET    | `/api/policies/[policyId]` | Get a single policy with its checklist        |
-| POST   | `/api/sessions`            | Create a session linked to a policy           |
+| Method | Endpoint                                      | Description                                   |
+| ------ | --------------------------------------------- | --------------------------------------------- |
+| POST   | `/api/session`                                | Create a call session (legacy stub)           |
+| POST   | `/api/policies`                               | Upload policy text → auto-generates checklist |
+| GET    | `/api/policies`                               | List all policies                             |
+| GET    | `/api/policies/[policyId]`                    | Get a single policy with its checklist        |
+| POST   | `/api/sessions`                               | Create a session linked to a policy           |
+| POST   | `/api/sessions/[sessionId]/transcript-events` | Ingest transcript events, auto-check items    |
+| GET    | `/api/sessions/[sessionId]/state`             | Get session, transcript, and checklist state  |
+| POST   | `/api/sessions/[sessionId]/end`               | End a session (idempotent)                    |
+| POST   | `/api/assemblyai/token`                       | Mint temporary AssemblyAI streaming token     |
+
+## Demo: Real-Time Transcription & Auto-Checklist
+
+Visit <http://localhost:3000/demo> (requires `ASSEMBLYAI_API_KEY`):
+
+1. Enter a policy name and checklist items (one per line), click
+   **Create Policy**
+2. Click **Create Session**
+3. Click **Start** and grant microphone access
+4. Speak — the transcript appears live and checklist items auto-check
+   when matching phrases are detected
+5. Click **Stop** to end the session
 
 ## Verifying the Policy Upload Path
 
@@ -112,14 +139,19 @@ npm test -- __tests__/policyUploadFlow.test.ts
 ```
 app/                  # Next.js App Router (pages, layouts, routes)
   api/                # API route handlers
+    assemblyai/       # AssemblyAI token minting
+    policies/         # Policy CRUD
+    sessions/         # Session lifecycle + transcript + state
+  demo/page.tsx       # Real-time transcription demo (client component)
   __tests__/          # Component and route tests
 lib/
   domain/types.ts     # Shared TypeScript types
-  repositories/       # In-memory data stores
+  repositories/       # In-memory data stores (globalThis for dev mode)
   services/           # Business logic layer
 __tests__/            # Service integration tests
 docs/                 # ADRs, architecture diagrams, proposal
-public/               # Static assets
+public/
+  worklets/           # AudioWorklet processors (pcm-processor.js)
 ```
 
 ## Contributing
