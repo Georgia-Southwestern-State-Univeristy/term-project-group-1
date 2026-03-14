@@ -8,7 +8,11 @@ export async function POST(request: Request) {
     body = await request.json();
   } catch {
     logger.error("api.error", {
-      data: { route: "POST /api/sessions", status: 400, reason: "Invalid JSON body" },
+      data: {
+        route: "POST /api/sessions",
+        status: 400,
+        reason: "Invalid JSON body",
+      },
     });
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }

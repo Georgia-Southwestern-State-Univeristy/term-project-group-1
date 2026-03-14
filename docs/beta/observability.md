@@ -46,12 +46,12 @@ Every log entry follows this JSON schema:
 ```
 
 | Field       | Type   | Always present | Description                                      |
-|-------------|--------|----------------|--------------------------------------------------|
-| `timestamp` | string | Yes            | ISO 8601 timestamp of when the event occurred     |
-| `level`     | string | Yes            | `info`, `warn`, or `error`                        |
+| ----------- | ------ | -------------- | ------------------------------------------------ |
+| `timestamp` | string | Yes            | ISO 8601 timestamp of when the event occurred    |
+| `level`     | string | Yes            | `info`, `warn`, or `error`                       |
 | `event`     | string | Yes            | Dot-separated event identifier (see table below) |
-| `sessionId` | string | No             | Call session UUID, included when available         |
-| `data`      | object | No             | Event-specific context (see table below)          |
+| `sessionId` | string | No             | Call session UUID, included when available       |
+| `data`      | object | No             | Event-specific context (see table below)         |
 
 ---
 
@@ -59,27 +59,27 @@ Every log entry follows this JSON schema:
 
 ### User Actions (level: `info`)
 
-| Event               | Route                                    | Data fields                                    |
-|---------------------|------------------------------------------|-------------------------------------------------|
-| `policy.upload`     | `POST /api/policies`                     | `policyId`, `name`, `checklistItemCount`        |
-| `session.start`     | `POST /api/sessions`                     | `policyId`                                      |
-| `session.end`       | `POST /api/sessions/[id]/end`            | _(none beyond sessionId)_                       |
-| `transcript.ingest` | `POST /api/sessions/[id]/transcript-events` | `eventCount`, `totalEntries`, `latestText`   |
+| Event               | Route                                       | Data fields                                |
+| ------------------- | ------------------------------------------- | ------------------------------------------ |
+| `policy.upload`     | `POST /api/policies`                        | `policyId`, `name`, `checklistItemCount`   |
+| `session.start`     | `POST /api/sessions`                        | `policyId`                                 |
+| `session.end`       | `POST /api/sessions/[id]/end`               | _(none beyond sessionId)_                  |
+| `transcript.ingest` | `POST /api/sessions/[id]/transcript-events` | `eventCount`, `totalEntries`, `latestText` |
 
 ### Errors (level: `error`)
 
 All errors are logged as `api.error` with contextual `data`:
 
-| Scenario                    | Route                                       | Data fields                              |
-|-----------------------------|---------------------------------------------|------------------------------------------|
-| Invalid JSON body           | policies, sessions, transcript-events        | `route`, `status` (400), `reason`        |
-| Missing/invalid field       | policies, sessions, transcript-events        | `route`, `status` (400), `field`         |
-| Invalid transcript event    | transcript-events                            | `route`, `status` (400), `reason` (includes index) |
-| Session not found           | transcript-events, state, end                | `sessionId`, `route`, `status` (404)     |
-| Policy not found            | sessions                                     | `policyId`, `route`, `status` (404)      |
-| Session not active          | transcript-events                            | `sessionId`, `route`, `status` (409), `currentStatus` |
-| Missing API key             | assemblyai/token                             | `route`, `status` (500), `reason`        |
-| Upstream API failure        | assemblyai/token                             | `route`, `status` (502), `upstreamStatus`, `upstreamResponse` |
+| Scenario                 | Route                                 | Data fields                                                   |
+| ------------------------ | ------------------------------------- | ------------------------------------------------------------- |
+| Invalid JSON body        | policies, sessions, transcript-events | `route`, `status` (400), `reason`                             |
+| Missing/invalid field    | policies, sessions, transcript-events | `route`, `status` (400), `field`                              |
+| Invalid transcript event | transcript-events                     | `route`, `status` (400), `reason` (includes index)            |
+| Session not found        | transcript-events, state, end         | `sessionId`, `route`, `status` (404)                          |
+| Policy not found         | sessions                              | `policyId`, `route`, `status` (404)                           |
+| Session not active       | transcript-events                     | `sessionId`, `route`, `status` (409), `currentStatus`         |
+| Missing API key          | assemblyai/token                      | `route`, `status` (500), `reason`                             |
+| Upstream API failure     | assemblyai/token                      | `route`, `status` (502), `upstreamStatus`, `upstreamResponse` |
 
 ---
 

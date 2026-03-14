@@ -108,10 +108,7 @@ export async function POST(
         reason: validation.message,
       },
     });
-    return NextResponse.json(
-      { error: validation.message },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: validation.message }, { status: 400 });
   }
 
   const { latestText } = appendTranscriptEvents(sessionId, events);

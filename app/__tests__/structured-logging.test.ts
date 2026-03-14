@@ -183,9 +183,8 @@ describe("transcript event validation", () => {
   });
 
   it("rejects events with missing text field", async () => {
-    const { POST } = await import(
-      "@/app/api/sessions/[sessionId]/transcript-events/route"
-    );
+    const { POST } =
+      await import("@/app/api/sessions/[sessionId]/transcript-events/route");
     const res = await POST(
       new Request("http://localhost/api/sessions/x/transcript-events", {
         method: "POST",
@@ -204,9 +203,8 @@ describe("transcript event validation", () => {
   });
 
   it("rejects events with non-boolean isFinal", async () => {
-    const { POST } = await import(
-      "@/app/api/sessions/[sessionId]/transcript-events/route"
-    );
+    const { POST } =
+      await import("@/app/api/sessions/[sessionId]/transcript-events/route");
     const res = await POST(
       new Request("http://localhost/api/sessions/x/transcript-events", {
         method: "POST",
