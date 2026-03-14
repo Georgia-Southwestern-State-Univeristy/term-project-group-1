@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { FRONTEND_TURN_LIMIT } from "@/lib/config/transcription";
 
 interface Policy {
   id: string;
@@ -209,11 +210,24 @@ export default function DemoPage() {
         const posted = postedTurnsRef.current;
         turns[turn_order as number] = transcript;
 
-        const fullText = Object.keys(turns)
+        const sortedKeys = Object.keys(turns)
           .sort((a, b) => Number(a) - Number(b))
-          .map((k) => turns[Number(k)])
-          .join(" ");
+          .map(Number);
 
+        // Prune oldest turns to keep memory stable
+        if (sortedKeys.length > FRONTEND_TURN_LIMIT) {
+          const toRemove = sortedKeys.slice(
+            0,
+            sortedKeys.length - FRONTEND_TURN_LIMIT
+          );
+          for (const k of toRemove) {
+            delete turns[k];
+            posted.delete(k);
+          }
+          sortedKeys.splice(0, sortedKeys.length - FRONTEND_TURN_LIMIT);
+        }
+
+        const fullText = sortedKeys.map((k) => turns[k]).join(" ");
         setTranscriptText(fullText);
 
         // Post previous turns that ended implicitly (new turn_order appeared)

@@ -17,3 +17,12 @@ export function appendEntries(
 export function getEntries(sessionId: string): TranscriptEntry[] {
   return transcripts.get(sessionId) ?? [];
 }
+
+export function pruneEntries(
+  sessionId: string,
+  keepCount: number
+): void {
+  const existing = transcripts.get(sessionId);
+  if (!existing || existing.length <= keepCount) return;
+  transcripts.set(sessionId, existing.slice(existing.length - keepCount));
+}
