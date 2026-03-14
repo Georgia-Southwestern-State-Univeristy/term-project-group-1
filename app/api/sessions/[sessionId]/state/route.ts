@@ -4,6 +4,7 @@ import { getSession } from "@/lib/repositories/sessionRepo";
 import { fetchPolicy } from "@/lib/services/policyService";
 import { getTranscript } from "@/lib/services/transcriptService";
 import { getCheckedIds } from "@/lib/repositories/checklistStateRepo";
+import { getSnapshots } from "@/lib/repositories/frequencyRepo";
 
 export async function GET(
   _request: Request,
@@ -28,6 +29,8 @@ export async function GET(
     })
   );
 
+  const frequencySnapshots = getSnapshots(sessionId);
+
   return NextResponse.json({
     session,
     transcript: {
@@ -35,5 +38,6 @@ export async function GET(
       fullText: transcript.fullText,
     },
     checklistState,
+    frequencySnapshots,
   });
 }
