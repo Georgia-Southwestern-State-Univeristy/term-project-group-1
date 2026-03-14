@@ -180,10 +180,8 @@ describe("checklist idempotency after pruning", () => {
     // This test verifies the key invariant: pruning old transcript text
     // does not un-check checklist items, because checked state is stored
     // independently in checklistStateRepo.
-    const {
-      markChecked,
-      getCheckedIds,
-    } = await import("@/lib/repositories/checklistStateRepo");
+    const { markChecked, getCheckedIds } =
+      await import("@/lib/repositories/checklistStateRepo");
 
     const sid = "checklist-prune-test";
 
