@@ -114,9 +114,9 @@ Previous checkmarks and transcript data persist in the UI due to stale in-memory
 
 # 2. Fix Tracking & Regression Protection
 
-| Issue # | Fix PR       | Description of Fix                                          | Regression Test Added?            |
-| ------- | ------------ | ----------------------------------------------------------- | --------------------------------- |
-| 1       | [Link to PR] | Migrated storage to PostgreSQL to ensure data persistence.  | Yes (Persistence Unit Test)       |
-| 5       | [Link to PR] | Added port detection and documentation for kill-port usage. | Yes (Updated README instructions) |
+| Issue # | Fix PR | Description of Fix                                                                 | Regression Test Added?             |
+| ------- | ------ | ---------------------------------------------------------------------------------- | ---------------------------------- |
+| 3       | #32    | Implemented character and turn-based windowing to prune transcript memory.         | Yes (transcript-windowing.test.ts) |
+| 4       | #33    | Added structured JSON logging to identify and trace AssemblyAI API/Token failures. | Yes (structured-logging.test.ts)   |
 
 ---
