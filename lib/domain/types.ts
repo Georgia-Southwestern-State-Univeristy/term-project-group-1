@@ -61,3 +61,22 @@ export interface ChecklistStateRow {
   text: string;
   checked: boolean;
 }
+
+export interface FrequencySnapshot {
+  id: string;
+  sessionId: string;
+  occurredAt: string;
+  dominantFrequencyHz: number;
+  frequencyBins: number[];
+  sampleRateHz: number;
+  fftSize: number;
+  binResolutionHz: number;
+}
+
+export interface FrequencyEvent {
+  dominantFrequencyHz: number;
+  frequencyBins: number[];
+  sampleRateHz: number;
+  fftSize: number;
+  binResolutionHz: number;
+}
