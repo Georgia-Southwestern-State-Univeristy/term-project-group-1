@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { FRONTEND_TURN_LIMIT } from "@/lib/config/transcription";
 
 interface Policy {
   id: string;
@@ -32,6 +33,28 @@ function mergeBuffers(
   return merged;
 }
 
+/* ── frequency bar chart ─────────────────────── */
+
+const BAND_HZ_SPAN = (16000 / 2048) * (1024 / 32); // ~250 Hz per band
+
+function FrequencyBars({ bands }: { bands: number[] }) {
+  return (
+    <div className="flex h-20 items-end gap-px">
+      {bands.map((db, i) => {
+        const normalized = Math.max(0, Math.min(1, (db + 100) / 100));
+        return (
+          <div
+            key={i}
+            className="flex-1 rounded-t bg-blue-500"
+            style={{ height: `${normalized * 100}%` }}
+            title={`${(i * BAND_HZ_SPAN).toFixed(0)}–${((i + 1) * BAND_HZ_SPAN).toFixed(0)} Hz: ${db.toFixed(1)} dB`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 /* ── component ───────────────────────────────── */
 
 export default function DemoPage() {
@@ -47,12 +70,19 @@ export default function DemoPage() {
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // frequency analysis state
+  const [dominantHz, setDominantHz] = useState<number | null>(null);
+  const [frequencyBands, setFrequencyBands] = useState<number[]>([]);
+
   // mutable refs for audio/ws resources
   const wsRef = useRef<WebSocket | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const turnsRef = useRef<Record<number, string>>({} as Record<number, string>);
   const postedTurnsRef = useRef(new Set<number>());
+  const analyserIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null
+  );
 
   /* ── API helpers ─────────────────────────────── */
 
@@ -167,8 +197,65 @@ export default function DemoPage() {
 
         const source = audioCtx.createMediaStreamSource(mediaStream);
         const workletNode = new AudioWorkletNode(audioCtx, "pcm-processor");
-        source.connect(workletNode);
+
+        // Insert AnalyserNode for real-time FFT (PCM → frequency Hz)
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048; // 1024 bins, ~7.8 Hz resolution at 16kHz
+        source.connect(analyser);
+        analyser.connect(workletNode);
         workletNode.connect(audioCtx.destination);
+
+        // Sample frequency data every 250ms
+        const freqDataArray = new Float32Array(analyser.frequencyBinCount);
+        const sampleRate = audioCtx.sampleRate;
+        const fftSize = analyser.fftSize;
+        const binResolution = sampleRate / fftSize;
+        const numBands = 32;
+        const binsPerBand = Math.floor(analyser.frequencyBinCount / numBands);
+
+        analyserIntervalRef.current = setInterval(() => {
+          analyser.getFloatFrequencyData(freqDataArray);
+
+          // Find dominant frequency (bin with max dB)
+          let maxDb = -Infinity;
+          let maxBin = 0;
+          for (let i = 1; i < freqDataArray.length; i++) {
+            if (freqDataArray[i] > maxDb) {
+              maxDb = freqDataArray[i];
+              maxBin = i;
+            }
+          }
+          const dominant = maxBin * binResolution;
+          setDominantHz(dominant);
+
+          // Condense to 32 bands (average dB per band)
+          const bands: number[] = [];
+          for (let b = 0; b < numBands; b++) {
+            let sum = 0;
+            for (let i = 0; i < binsPerBand; i++) {
+              sum += freqDataArray[b * binsPerBand + i];
+            }
+            bands.push(sum / binsPerBand);
+          }
+          setFrequencyBands(bands);
+
+          // Fire-and-forget POST to backend
+          if (session) {
+            fetch(`/api/sessions/${session.id}/frequency`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                dominantFrequencyHz: dominant,
+                frequencyBins: bands,
+                sampleRateHz: sampleRate,
+                fftSize,
+                binResolutionHz: binResolution,
+              }),
+            }).catch(() => {
+              // Silently ignore — must not affect streaming
+            });
+          }
+        }, 250);
 
         // 5. Buffer audio to ~100ms chunks before sending
         let audioBufferQueue = new Int16Array(0);
@@ -209,11 +296,24 @@ export default function DemoPage() {
         const posted = postedTurnsRef.current;
         turns[turn_order as number] = transcript;
 
-        const fullText = Object.keys(turns)
+        const sortedKeys = Object.keys(turns)
           .sort((a, b) => Number(a) - Number(b))
-          .map((k) => turns[Number(k)])
-          .join(" ");
+          .map(Number);
 
+        // Prune oldest turns to keep memory stable
+        if (sortedKeys.length > FRONTEND_TURN_LIMIT) {
+          const toRemove = sortedKeys.slice(
+            0,
+            sortedKeys.length - FRONTEND_TURN_LIMIT
+          );
+          for (const k of toRemove) {
+            delete turns[k];
+            posted.delete(k);
+          }
+          sortedKeys.splice(0, sortedKeys.length - FRONTEND_TURN_LIMIT);
+        }
+
+        const fullText = sortedKeys.map((k) => turns[k]).join(" ");
         setTranscriptText(fullText);
 
         // Post previous turns that ended implicitly (new turn_order appeared)
@@ -257,6 +357,12 @@ export default function DemoPage() {
           await postTranscriptEvent(session.id, turns[t]);
         }
       }
+    }
+
+    // Stop frequency sampling
+    if (analyserIntervalRef.current) {
+      clearInterval(analyserIntervalRef.current);
+      analyserIntervalRef.current = null;
     }
 
     // Send terminate and close WS
@@ -407,6 +513,33 @@ export default function DemoPage() {
               )}
             </div>
           </div>
+
+          {/* Live frequency analysis */}
+          {streaming && (
+            <div className="mt-4">
+              <h3 className="mb-1 text-sm font-medium">
+                Frequency Analysis (FFT)
+              </h3>
+              <div className="rounded border bg-gray-50 p-3">
+                <p className="mb-2 text-xs text-gray-500">
+                  PCM → FFT → Frequency (Hz) · 16 kHz sample rate · 2048-point
+                  FFT · ~7.8 Hz/bin
+                </p>
+                {dominantHz !== null && (
+                  <p className="mb-3 text-lg font-semibold tabular-nums">
+                    Dominant: {dominantHz.toFixed(1)} Hz
+                  </p>
+                )}
+                {frequencyBands.length > 0 && (
+                  <FrequencyBars bands={frequencyBands} />
+                )}
+                <div className="mt-1 flex justify-between text-xs text-gray-400">
+                  <span>0 Hz</span>
+                  <span>8000 Hz</span>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
       )}
     </div>

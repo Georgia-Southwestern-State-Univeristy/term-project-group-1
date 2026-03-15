@@ -5,6 +5,7 @@ import {
   appendTranscriptEvents,
   getTranscript,
 } from "@/lib/services/transcriptService";
+import { TranscriptEvent } from "@/lib/domain/types";
 import { autoCheckChecklist } from "@/lib/services/checklistService";
 import { getCheckedIds } from "@/lib/repositories/checklistStateRepo";
 import { logger } from "@/lib/logger";
@@ -111,14 +112,15 @@ export async function POST(
     return NextResponse.json({ error: validation.message }, { status: 400 });
   }
 
-  const { latestText } = appendTranscriptEvents(sessionId, events);
+  const typedEvents = events as TranscriptEvent[];
+  const { latestText } = appendTranscriptEvents(sessionId, typedEvents);
 
-  const { fullText } = getTranscript(sessionId);
+  const newText = typedEvents.map((e) => e.text).join(" ");
 
   const policy = fetchPolicy(session.policyId);
   let checkedItemIds: string[] = [];
-  if (policy && fullText) {
-    autoCheckChecklist(sessionId, policy.checklist, fullText);
+  if (policy && newText) {
+    autoCheckChecklist(sessionId, policy.checklist, newText);
   }
   checkedItemIds = getCheckedIds(sessionId);
 
