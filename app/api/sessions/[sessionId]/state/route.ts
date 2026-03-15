@@ -4,6 +4,7 @@ import { getSession } from "@/lib/repositories/sessionRepo";
 import { fetchPolicy } from "@/lib/services/policyService";
 import { getTranscript } from "@/lib/services/transcriptService";
 import { getCheckedIds } from "@/lib/repositories/checklistStateRepo";
+import { logger } from "@/lib/logger";
 import { getSnapshots } from "@/lib/repositories/frequencyRepo";
 
 export async function GET(
@@ -14,6 +15,10 @@ export async function GET(
 
   const session = getSession(sessionId);
   if (!session) {
+    logger.error("api.error", {
+      sessionId,
+      data: { route: "GET /api/sessions/[id]/state", status: 404 },
+    });
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
 
