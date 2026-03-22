@@ -2,17 +2,29 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/repositories/sessionRepo";
 import { appendSnapshot, getSnapshots } from "@/lib/repositories/frequencyRepo";
 import { FrequencyEvent } from "@/lib/domain/types";
+import {
+  authenticateRequest,
+  authErrorResponse,
+  assertOwnership,
+} from "@/lib/auth";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
+  const authResult = await authenticateRequest(request);
+  if (!authResult.success) return authErrorResponse(authResult.error);
+  const { auth } = authResult;
+
   const { sessionId } = await params;
 
   const session = getSession(sessionId);
   if (!session) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
+
+  const forbidden = assertOwnership(session, auth);
+  if (forbidden) return forbidden;
 
   if (session.status !== "active") {
     return NextResponse.json(
@@ -57,15 +69,22 @@ export async function POST(
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
+  const authResult = await authenticateRequest(request);
+  if (!authResult.success) return authErrorResponse(authResult.error);
+  const { auth } = authResult;
+
   const { sessionId } = await params;
 
   const session = getSession(sessionId);
   if (!session) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
+
+  const forbidden = assertOwnership(session, auth);
+  if (forbidden) return forbidden;
 
   const snapshots = getSnapshots(sessionId);
 

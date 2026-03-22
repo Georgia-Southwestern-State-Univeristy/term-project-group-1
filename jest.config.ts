@@ -14,4 +14,18 @@ const config: Config = {
   testPathIgnorePatterns: ["<rootDir>/.next/", "<rootDir>/node_modules/"],
 };
 
-export default createJestConfig(config);
+const jestConfig = createJestConfig(config);
+
+// next/jest appends transformIgnorePatterns, so we override post-resolve
+// to allow ESM-only packages (jose) through the Jest transform pipeline.
+async function resolvedConfig() {
+  const resolved = await jestConfig();
+  resolved.transformIgnorePatterns = [
+    "/node_modules/(?!.pnpm)(?!(jose|geist)/)",
+    "/node_modules/.pnpm/(?!(jose|geist)@)",
+    "^.+\\.module\\.(css|sass|scss)$",
+  ];
+  return resolved;
+}
+
+export default resolvedConfig;
