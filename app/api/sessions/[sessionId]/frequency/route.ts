@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/repositories/sessionRepo";
 import { appendSnapshot, getSnapshots } from "@/lib/repositories/frequencyRepo";
 import { logger } from "@/lib/logger";
+import {
+  authenticateRequest,
+  authErrorResponse,
+  assertOwnership,
+} from "@/lib/auth";
 
 const MAX_FREQUENCY_BINS = 4096;
 
@@ -78,6 +83,10 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
+  const authResult = await authenticateRequest(request);
+  if (!authResult.success) return authErrorResponse(authResult.error);
+  const { auth } = authResult;
+
   const { sessionId } = await params;
 
   const session = getSession(sessionId);
@@ -88,6 +97,9 @@ export async function POST(
     });
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
+
+  const forbidden = assertOwnership(session, auth);
+  if (forbidden) return forbidden;
 
   if (session.status !== "active") {
     logger.error("api.error", {
@@ -160,9 +172,13 @@ export async function POST(
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
+  const authResult = await authenticateRequest(request);
+  if (!authResult.success) return authErrorResponse(authResult.error);
+  const { auth } = authResult;
+
   const { sessionId } = await params;
 
   const session = getSession(sessionId);
@@ -173,6 +189,9 @@ export async function GET(
     });
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
+
+  const forbidden = assertOwnership(session, auth);
+  if (forbidden) return forbidden;
 
   const snapshots = getSnapshots(sessionId);
 

@@ -8,6 +8,11 @@ import {
 import { TranscriptEvent } from "@/lib/domain/types";
 import { autoCheckChecklist } from "@/lib/services/checklistService";
 import { getCheckedIds } from "@/lib/repositories/checklistStateRepo";
+import {
+  authenticateRequest,
+  authErrorResponse,
+  assertOwnership,
+} from "@/lib/auth";
 import { logger } from "@/lib/logger";
 
 const MAX_EVENTS_PER_REQUEST = 50;
@@ -57,6 +62,10 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
+  const authResult = await authenticateRequest(request);
+  if (!authResult.success) return authErrorResponse(authResult.error);
+  const { auth } = authResult;
+
   const { sessionId } = await params;
 
   const session = getSession(sessionId);
@@ -67,6 +76,9 @@ export async function POST(
     });
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
+
+  const forbidden = assertOwnership(session, auth);
+  if (forbidden) return forbidden;
 
   if (session.status !== "active") {
     logger.error("api.error", {

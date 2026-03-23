@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { createSession } from "@/lib/services/sessionService";
+import { authenticateRequest, authErrorResponse } from "@/lib/auth";
 import { logger } from "@/lib/logger";
 
 export async function POST(request: Request) {
+  const authResult = await authenticateRequest(request);
+  if (!authResult.success) return authErrorResponse(authResult.error);
+  const { auth } = authResult;
+
   let body: unknown;
   try {
     body = await request.json();
@@ -29,7 +34,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = createSession(policyId.trim());
+  const result = createSession(policyId.trim(), auth.userId);
 
   if (!result.success) {
     logger.error("api.error", {

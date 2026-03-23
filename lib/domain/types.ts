@@ -22,6 +22,7 @@ export interface PolicySummary {
 export interface Session {
   id: string;
   policyId: string;
+  ownerId: string;
   status: "active" | "ended";
   createdAt: string;
   endedAt?: string;
@@ -79,4 +80,14 @@ export interface FrequencyEvent {
   sampleRateHz: number;
   fftSize: number;
   binResolutionHz: number;
+}
+
+export type UserRole = "agent" | "supervisor";
+
+export interface User {
+  id: string;
+  email: string;
+  passwordHash: string;
+  role: UserRole;
+  name: string;
 }

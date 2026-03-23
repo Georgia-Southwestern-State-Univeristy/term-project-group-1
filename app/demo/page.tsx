@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { FRONTEND_TURN_LIMIT } from "@/lib/config/transcription";
 
 interface Policy {
@@ -58,6 +59,8 @@ function FrequencyBars({ bands }: { bands: number[] }) {
 /* ── component ───────────────────────────────── */
 
 export default function DemoPage() {
+  const router = useRouter();
+
   // policy & session state
   const [policyName, setPolicyName] = useState("");
   const [policyText, setPolicyText] = useState("");
@@ -69,6 +72,27 @@ export default function DemoPage() {
   const [checklist, setChecklist] = useState<ChecklistStateRow[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("token");
+  });
+
+  useEffect(() => {
+    if (!token) router.push("/login");
+  }, [token, router]);
+
+  function authHeaders(): Record<string, string> {
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  }
+
+  function handleLogout() {
+    localStorage.removeItem("token");
+    setToken(null);
+    router.push("/login");
+  }
 
   // frequency analysis state
   const [dominantHz, setDominantHz] = useState<number | null>(null);
@@ -90,7 +114,7 @@ export default function DemoPage() {
     setError(null);
     const res = await fetch("/api/policies", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({ name: policyName, text: policyText }),
     });
     if (!res.ok) {
@@ -109,7 +133,7 @@ export default function DemoPage() {
     setError(null);
     const res = await fetch("/api/sessions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({ policyId: policy.id }),
     });
     if (!res.ok) {
@@ -123,7 +147,9 @@ export default function DemoPage() {
   }
 
   async function refreshState(sessionId: string) {
-    const res = await fetch(`/api/sessions/${sessionId}/state`);
+    const res = await fetch(`/api/sessions/${sessionId}/state`, {
+      headers: authHeaders(),
+    });
     if (!res.ok) return;
     const data = await res.json();
     setChecklist(data.checklistState);
@@ -132,7 +158,7 @@ export default function DemoPage() {
   async function postTranscriptEvent(sessionId: string, text: string) {
     await fetch(`/api/sessions/${sessionId}/transcript-events`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({
         events: [{ text, isFinal: true, occurredAt: new Date().toISOString() }],
       }),
@@ -142,7 +168,10 @@ export default function DemoPage() {
 
   async function endSession() {
     if (!session) return;
-    await fetch(`/api/sessions/${session.id}/end`, { method: "POST" });
+    await fetch(`/api/sessions/${session.id}/end`, {
+      method: "POST",
+      headers: authHeaders(),
+    });
     await refreshState(session.id);
     setSession((s) => (s ? { ...s, status: "ended" } : s));
   }
@@ -243,7 +272,7 @@ export default function DemoPage() {
           if (session) {
             fetch(`/api/sessions/${session.id}/frequency`, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: authHeaders(),
               body: JSON.stringify({
                 dominantFrequencyHz: dominant,
                 frequencyBins: bands,
@@ -395,9 +424,29 @@ export default function DemoPage() {
   const btnBase =
     "rounded-md px-4 py-2 text-sm font-medium text-white focus:outline-2 focus:outline-offset-2";
 
+  if (!token) return null;
+
   return (
     <div className="mx-auto max-w-2xl p-5">
-      <h1 className="mb-6 text-2xl font-bold">Call Co-pilot Demo</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Call Co-pilot Demo</h1>
+        <button
+          onClick={handleLogout}
+          className="rounded-md bg-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+        >
+          Logout
+        </button>
+      </div>
+
+      {/* JWT Token display */}
+      <div className="mb-6 rounded-md bg-gray-100 p-3 dark:bg-gray-800">
+        <p className="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+          JWT Token
+        </p>
+        <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-xs text-gray-700 dark:text-gray-300">
+          {token}
+        </pre>
+      </div>
 
       {error && (
         <div className="mb-4 rounded bg-red-100 p-3 text-sm text-red-800">
