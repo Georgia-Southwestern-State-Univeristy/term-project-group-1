@@ -10,15 +10,31 @@ import { autoCheckChecklist } from "@/lib/services/checklistService";
 import { getCheckedIds } from "@/lib/repositories/checklistStateRepo";
 import { logger } from "@/lib/logger";
 
+const MAX_EVENTS_PER_REQUEST = 50;
+const MAX_EVENT_TEXT_LENGTH = 10_000;
+
 function validateEvents(
   events: unknown[]
 ): { valid: true } | { valid: false; message: string } {
+  if (events.length > MAX_EVENTS_PER_REQUEST) {
+    return {
+      valid: false,
+      message: `Too many events: received ${events.length}, maximum is ${MAX_EVENTS_PER_REQUEST}`,
+    };
+  }
+
   for (let i = 0; i < events.length; i++) {
     const e = events[i] as Record<string, unknown>;
     if (typeof e.text !== "string" || e.text.trim().length === 0) {
       return {
         valid: false,
         message: `events[${i}] is invalid: 'text' must be a non-empty string`,
+      };
+    }
+    if (e.text.length > MAX_EVENT_TEXT_LENGTH) {
+      return {
+        valid: false,
+        message: `events[${i}] is invalid: 'text' exceeds ${MAX_EVENT_TEXT_LENGTH} character limit`,
       };
     }
     if (typeof e.isFinal !== "boolean") {

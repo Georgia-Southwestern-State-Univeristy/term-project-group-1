@@ -5,6 +5,9 @@ import {
 } from "@/lib/services/policyService";
 import { logger } from "@/lib/logger";
 
+const POLICY_NAME_MAX_LENGTH = 200;
+const POLICY_TEXT_MAX_LENGTH = 50_000;
+
 export async function POST(request: Request) {
   let body: unknown;
   try {
@@ -32,12 +35,46 @@ export async function POST(request: Request) {
     );
   }
 
+  if (name.trim().length > POLICY_NAME_MAX_LENGTH) {
+    logger.error("api.error", {
+      data: {
+        route: "POST /api/policies",
+        status: 400,
+        field: "name",
+        reason: `Exceeds ${POLICY_NAME_MAX_LENGTH} character limit`,
+      },
+    });
+    return NextResponse.json(
+      {
+        error: `'name' must be at most ${POLICY_NAME_MAX_LENGTH} characters`,
+      },
+      { status: 400 }
+    );
+  }
+
   if (typeof text !== "string" || text.trim().length === 0) {
     logger.error("api.error", {
       data: { route: "POST /api/policies", status: 400, field: "text" },
     });
     return NextResponse.json(
       { error: "Missing or invalid 'text' field" },
+      { status: 400 }
+    );
+  }
+
+  if (text.length > POLICY_TEXT_MAX_LENGTH) {
+    logger.error("api.error", {
+      data: {
+        route: "POST /api/policies",
+        status: 400,
+        field: "text",
+        reason: `Exceeds ${POLICY_TEXT_MAX_LENGTH} character limit`,
+      },
+    });
+    return NextResponse.json(
+      {
+        error: `'text' must be at most ${POLICY_TEXT_MAX_LENGTH} characters`,
+      },
       { status: 400 }
     );
   }
