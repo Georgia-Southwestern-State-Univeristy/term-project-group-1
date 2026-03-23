@@ -11,6 +11,7 @@ import {
 } from "@/lib/auth";
 import { logger } from "@/lib/logger";
 import { getSnapshots } from "@/lib/repositories/frequencyRepo";
+import { computeThreatScore } from "@/lib/services/threatScoreService";
 
 export async function GET(
   request: Request,
@@ -48,6 +49,13 @@ export async function GET(
 
   const frequencySnapshots = await getSnapshots(sessionId);
 
+  const threatScore = computeThreatScore(
+    frequencySnapshots,
+    policy?.checklist.length ?? 0,
+    checkedIds.size,
+    transcript.fullText ?? ""
+  );
+
   return NextResponse.json({
     session,
     transcript: {
@@ -56,5 +64,6 @@ export async function GET(
     },
     checklistState,
     frequencySnapshots,
+    threatScore,
   });
 }
