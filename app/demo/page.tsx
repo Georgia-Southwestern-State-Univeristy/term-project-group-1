@@ -94,7 +94,9 @@ export default function DemoPage() {
       body: JSON.stringify({ name: policyName, text: policyText }),
     });
     if (!res.ok) {
-      setError(`Policy creation failed: ${res.status}`);
+      const body = await res.json().catch(() => null);
+      const detail = body?.error ?? `status ${res.status}`;
+      setError(`Policy creation failed: ${detail}`);
       return;
     }
     const data = await res.json();
@@ -113,7 +115,9 @@ export default function DemoPage() {
       body: JSON.stringify({ policyId: policy.id }),
     });
     if (!res.ok) {
-      setError(`Session creation failed: ${res.status}`);
+      const body = await res.json().catch(() => null);
+      const detail = body?.error ?? `status ${res.status}`;
+      setError(`Session creation failed: ${detail}`);
       return;
     }
     const data = await res.json();
@@ -442,13 +446,20 @@ export default function DemoPage() {
       {policy && (
         <section className="mb-6">
           <h2 className="mb-2 text-lg font-semibold">2. Create Session</h2>
-          <button
-            onClick={createSession}
-            disabled={!!session}
-            className={`${btnBase} bg-green-600 hover:bg-green-700 disabled:opacity-50`}
-          >
-            Create Session
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={createSession}
+              disabled={session?.status === "active"}
+              className={`${btnBase} bg-green-600 hover:bg-green-700 disabled:opacity-50`}
+            >
+              {session?.status === "ended" ? "New Session" : "Create Session"}
+            </button>
+            {session?.status === "ended" && (
+              <span className="text-xs text-gray-500">
+                Previous session ended — start a new one
+              </span>
+            )}
+          </div>
           {session && (
             <p className="mt-2 text-sm text-gray-600">
               Session: {session.id} ({session.status})
