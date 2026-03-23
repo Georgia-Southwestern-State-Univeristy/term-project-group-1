@@ -3,9 +3,12 @@ import {
   createPolicyFromText,
   listPolicies,
 } from "@/lib/services/policyService";
+import { authenticateRequest, authErrorResponse } from "@/lib/auth";
 import { logger } from "@/lib/logger";
 
 export async function POST(request: Request) {
+  const authResult = await authenticateRequest(request);
+  if (!authResult.success) return authErrorResponse(authResult.error);
   let body: unknown;
   try {
     body = await request.json();
@@ -72,7 +75,10 @@ export async function POST(request: Request) {
   return NextResponse.json(policy, { status: 201 });
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const authResult = await authenticateRequest(request);
+  if (!authResult.success) return authErrorResponse(authResult.error);
+
   const policies = listPolicies();
   return NextResponse.json({ policies });
 }

@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 import { logger, LogEntry } from "@/lib/logger";
+import { agentAuthHeaders } from "@/lib/test-helpers/auth";
 
 /* ── spy helpers ─────────────────────────────── */
 
@@ -76,12 +77,14 @@ describe("logger", () => {
 
 describe("POST /api/sessions logging", () => {
   it("logs session.start with sessionId and policyId on success", async () => {
+    const headers = await agentAuthHeaders();
+
     // Create a policy first
     const { POST: createPolicy } = await import("@/app/api/policies/route");
     const policyRes = await createPolicy(
       new Request("http://localhost/api/policies", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ name: "Test Policy", text: "Verify identity" }),
       })
     );
@@ -92,7 +95,7 @@ describe("POST /api/sessions logging", () => {
     const res = await createSession(
       new Request("http://localhost/api/sessions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ policyId: policy.id }),
       })
     );
@@ -110,11 +113,12 @@ describe("POST /api/sessions logging", () => {
 
 describe("POST /api/policies logging", () => {
   it("logs policy.upload with name and checklist count", async () => {
+    const headers = await agentAuthHeaders();
     const { POST } = await import("@/app/api/policies/route");
     const res = await POST(
       new Request("http://localhost/api/policies", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           name: "HIPAA Policy",
           text: "Verify identity\nConfirm DOB\nRead disclaimer",
@@ -135,11 +139,12 @@ describe("POST /api/policies logging", () => {
 
 describe("error logging with context", () => {
   it("logs api.error with route and status on policy not found", async () => {
+    const headers = await agentAuthHeaders();
     const { POST } = await import("@/app/api/sessions/route");
     const res = await POST(
       new Request("http://localhost/api/sessions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ policyId: "nonexistent-id" }),
       })
     );
@@ -158,13 +163,16 @@ describe("error logging with context", () => {
 
 describe("transcript event validation", () => {
   let sessionId: string;
+  let headers: Record<string, string>;
 
   beforeAll(async () => {
+    headers = await agentAuthHeaders();
+
     const { POST: createPolicy } = await import("@/app/api/policies/route");
     const policyRes = await createPolicy(
       new Request("http://localhost/api/policies", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ name: "Val Policy", text: "Check item" }),
       })
     );
@@ -174,7 +182,7 @@ describe("transcript event validation", () => {
     const sessionRes = await createSession(
       new Request("http://localhost/api/sessions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ policyId: policy.id }),
       })
     );
@@ -188,7 +196,7 @@ describe("transcript event validation", () => {
     const res = await POST(
       new Request("http://localhost/api/sessions/x/transcript-events", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           events: [{ isFinal: true, occurredAt: new Date().toISOString() }],
         }),
@@ -208,7 +216,7 @@ describe("transcript event validation", () => {
     const res = await POST(
       new Request("http://localhost/api/sessions/x/transcript-events", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           events: [
             {
@@ -233,11 +241,12 @@ describe("transcript event validation", () => {
 
 describe("policy field validation", () => {
   it("rejects missing policy name with clear error message", async () => {
+    const headers = await agentAuthHeaders();
     const { POST } = await import("@/app/api/policies/route");
     const res = await POST(
       new Request("http://localhost/api/policies", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ name: "", text: "Check item" }),
       })
     );
@@ -252,11 +261,12 @@ describe("policy field validation", () => {
   });
 
   it("rejects empty policy text with clear error message", async () => {
+    const headers = await agentAuthHeaders();
     const { POST } = await import("@/app/api/policies/route");
     const res = await POST(
       new Request("http://localhost/api/policies", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ name: "Test", text: "   " }),
       })
     );

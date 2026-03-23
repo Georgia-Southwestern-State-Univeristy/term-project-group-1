@@ -4,13 +4,22 @@ import { getSession } from "@/lib/repositories/sessionRepo";
 import { fetchPolicy } from "@/lib/services/policyService";
 import { getTranscript } from "@/lib/services/transcriptService";
 import { getCheckedIds } from "@/lib/repositories/checklistStateRepo";
+import {
+  authenticateRequest,
+  authErrorResponse,
+  assertOwnership,
+} from "@/lib/auth";
 import { logger } from "@/lib/logger";
 import { getSnapshots } from "@/lib/repositories/frequencyRepo";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
+  const authResult = await authenticateRequest(request);
+  if (!authResult.success) return authErrorResponse(authResult.error);
+  const { auth } = authResult;
+
   const { sessionId } = await params;
 
   const session = getSession(sessionId);
@@ -21,6 +30,9 @@ export async function GET(
     });
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
+
+  const forbidden = assertOwnership(session, auth);
+  if (forbidden) return forbidden;
 
   const policy = fetchPolicy(session.policyId);
   const transcript = getTranscript(sessionId);

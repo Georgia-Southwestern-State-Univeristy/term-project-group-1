@@ -9,6 +9,7 @@ import {
 } from "@/lib/services/transcriptService";
 import { autoCheckChecklist } from "@/lib/services/checklistService";
 import { getCheckedIds } from "@/lib/repositories/checklistStateRepo";
+import { agentAuthHeaders, AGENT_USER_ID } from "@/lib/test-helpers/auth";
 
 describe("Week 7 — Real-time transcription & auto-checklist", () => {
   it("checks a checklist item when transcript contains matching text", () => {
@@ -16,7 +17,7 @@ describe("Week 7 — Real-time transcription & auto-checklist", () => {
       "Security Protocol",
       "Verify caller identity\nConfirm account number"
     );
-    const result = createSession(policy.id);
+    const result = createSession(policy.id, "test-owner");
     if (!result.success) throw new Error("session creation failed");
     const session = result.session;
 
@@ -51,7 +52,7 @@ describe("Week 7 — Real-time transcription & auto-checklist", () => {
 
   it("builds fullText from final entries only and stores all entries", () => {
     const policy = createPolicyFromText("Test Policy", "Item one");
-    const result = createSession(policy.id);
+    const result = createSession(policy.id, "test-owner");
     if (!result.success) throw new Error("session creation failed");
     const session = result.session;
 
@@ -86,7 +87,7 @@ describe("Week 7 — Real-time transcription & auto-checklist", () => {
 
   it("rejects transcript events for an ended session (409)", async () => {
     const policy = createPolicyFromText("End Test", "Some item");
-    const createResult = createSession(policy.id);
+    const createResult = createSession(policy.id, AGENT_USER_ID);
     if (!createResult.success) throw new Error("session creation failed");
     const session = createResult.session;
 
@@ -95,11 +96,12 @@ describe("Week 7 — Real-time transcription & auto-checklist", () => {
     const { POST } =
       await import("@/app/api/sessions/[sessionId]/transcript-events/route");
 
+    const headers = await agentAuthHeaders();
     const request = new Request(
       "http://localhost/api/sessions/" + session.id + "/transcript-events",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           events: [
             {
@@ -124,7 +126,7 @@ describe("Week 7 — Real-time transcription & auto-checklist", () => {
       "Fuzzy Policy",
       "Verify caller identity\nConfirm date of birth"
     );
-    const result = createSession(policy.id);
+    const result = createSession(policy.id, "test-owner");
     if (!result.success) throw new Error("session creation failed");
     const session = result.session;
 

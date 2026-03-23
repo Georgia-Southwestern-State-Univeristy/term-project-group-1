@@ -6,7 +6,10 @@ type CreateSessionResult =
   | { success: true; session: Session }
   | { success: false; error: "not_found" };
 
-export function createSession(policyId: string): CreateSessionResult {
+export function createSession(
+  policyId: string,
+  ownerId: string
+): CreateSessionResult {
   const policy = getPolicy(policyId);
   if (!policy) {
     return { success: false, error: "not_found" };
@@ -15,6 +18,7 @@ export function createSession(policyId: string): CreateSessionResult {
   const session: Session = {
     id: crypto.randomUUID(),
     policyId,
+    ownerId,
     status: "active",
     createdAt: new Date().toISOString(),
   };
