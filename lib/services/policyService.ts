@@ -5,7 +5,10 @@ import {
   listPolicies as repoListPolicies,
 } from "@/lib/repositories/policyRepo";
 
-export function createPolicyFromText(name: string, text: string): Policy {
+export async function createPolicyFromText(
+  name: string,
+  text: string
+): Promise<Policy> {
   const id = crypto.randomUUID();
   const createdAt = new Date().toISOString();
 
@@ -21,14 +24,14 @@ export function createPolicyFromText(name: string, text: string): Policy {
     }));
 
   const policy: Policy = { id, name, text, createdAt, checklist };
-  savePolicy(policy);
+  await savePolicy(policy);
   return policy;
 }
 
-export function fetchPolicy(id: string): Policy | undefined {
-  return getPolicy(id);
+export async function fetchPolicy(id: string): Promise<Policy | undefined> {
+  return await getPolicy(id);
 }
 
-export function listPolicies(): PolicySummary[] {
-  return repoListPolicies();
+export async function listPolicies(): Promise<PolicySummary[]> {
+  return await repoListPolicies();
 }

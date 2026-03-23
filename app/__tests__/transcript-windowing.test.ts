@@ -34,37 +34,37 @@ function makeEntry(
 describe("transcriptRepo.pruneEntries", () => {
   const sid = "prune-repo-test";
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // clear any leftover entries
-    pruneEntries(sid, 0);
+    await pruneEntries(sid, 0);
   });
 
-  it("keeps only the last N entries", () => {
+  it("keeps only the last N entries", async () => {
     const entries = Array.from({ length: 10 }, (_, i) =>
       makeEntry(sid, `entry-${i}`)
     );
-    appendEntries(sid, entries);
+    await appendEntries(sid, entries);
 
-    pruneEntries(sid, 3);
+    await pruneEntries(sid, 3);
 
-    const remaining = getEntries(sid);
+    const remaining = await getEntries(sid);
     expect(remaining).toHaveLength(3);
     expect(remaining[0].text).toBe("entry-7");
     expect(remaining[2].text).toBe("entry-9");
   });
 
-  it("is a no-op when keepCount >= entries length", () => {
+  it("is a no-op when keepCount >= entries length", async () => {
     const entries = [makeEntry(sid, "a"), makeEntry(sid, "b")];
-    appendEntries(sid, entries);
+    await appendEntries(sid, entries);
 
-    pruneEntries(sid, 5);
+    await pruneEntries(sid, 5);
 
-    expect(getEntries(sid)).toHaveLength(2);
+    expect(await getEntries(sid)).toHaveLength(2);
   });
 
-  it("is a no-op for unknown session", () => {
-    pruneEntries("nonexistent", 1);
-    expect(getEntries("nonexistent")).toHaveLength(0);
+  it("is a no-op for unknown session", async () => {
+    await pruneEntries("nonexistent", 1);
+    expect(await getEntries("nonexistent")).toHaveLength(0);
   });
 });
 
@@ -73,21 +73,21 @@ describe("transcriptRepo.pruneEntries", () => {
 describe("transcriptService.pruneIfNeeded", () => {
   const sid = "prune-service-test";
 
-  beforeEach(() => {
-    pruneEntries(sid, 0);
+  beforeEach(async () => {
+    await pruneEntries(sid, 0);
   });
 
-  it("prunes entries when final text exceeds char limit", () => {
+  it("prunes entries when final text exceeds char limit", async () => {
     // Each entry has 20 chars → 5 entries = 100 chars
     const entries = Array.from({ length: 5 }, (_, i) =>
       makeEntry(sid, "a".repeat(20) + String(i).padStart(0))
     );
-    appendEntries(sid, entries);
+    await appendEntries(sid, entries);
 
     // Limit to 50 chars → should keep ~2-3 entries
-    pruneIfNeeded(sid, 50);
+    await pruneIfNeeded(sid, 50);
 
-    const remaining = getEntries(sid);
+    const remaining = await getEntries(sid);
     const totalChars = remaining
       .filter((e) => e.isFinal)
       .reduce((sum, e) => sum + e.text.length, 0);
@@ -95,16 +95,16 @@ describe("transcriptService.pruneIfNeeded", () => {
     expect(remaining.length).toBeLessThan(5);
   });
 
-  it("does not prune when under the limit", () => {
+  it("does not prune when under the limit", async () => {
     const entries = [makeEntry(sid, "short")];
-    appendEntries(sid, entries);
+    await appendEntries(sid, entries);
 
-    pruneIfNeeded(sid, 1000);
+    await pruneIfNeeded(sid, 1000);
 
-    expect(getEntries(sid)).toHaveLength(1);
+    expect(await getEntries(sid)).toHaveLength(1);
   });
 
-  it("preserves non-final entries within the kept range", () => {
+  it("preserves non-final entries within the kept range", async () => {
     // Mix: final(20), non-final(5), final(20), non-final(5), final(20)
     const entries = [
       makeEntry(sid, "a".repeat(20), true),
@@ -113,12 +113,12 @@ describe("transcriptService.pruneIfNeeded", () => {
       makeEntry(sid, "d".repeat(5), false),
       makeEntry(sid, "e".repeat(20), true),
     ];
-    appendEntries(sid, entries);
+    await appendEntries(sid, entries);
 
     // Limit to 45 chars of final text → keeps last 2 finals (40 chars) + interleaved non-finals
-    pruneIfNeeded(sid, 45);
+    await pruneIfNeeded(sid, 45);
 
-    const remaining = getEntries(sid);
+    const remaining = await getEntries(sid);
     const finalChars = remaining
       .filter((e) => e.isFinal)
       .reduce((sum, e) => sum + e.text.length, 0);
@@ -134,12 +134,12 @@ describe("transcriptService.pruneIfNeeded", () => {
 describe("appendTranscriptEvents with windowing", () => {
   const sid = "append-prune-test";
 
-  beforeEach(() => {
-    pruneEntries(sid, 0);
+  beforeEach(async () => {
+    await pruneEntries(sid, 0);
   });
 
-  it("appends events and returns correct delta", () => {
-    const result = appendTranscriptEvents(sid, [
+  it("appends events and returns correct delta", async () => {
+    const result = await appendTranscriptEvents(sid, [
       { text: "hello", isFinal: true, occurredAt: new Date().toISOString() },
       { text: "world", isFinal: true, occurredAt: new Date().toISOString() },
     ]);
@@ -154,20 +154,20 @@ describe("appendTranscriptEvents with windowing", () => {
 describe("getTranscript after pruning", () => {
   const sid = "get-transcript-pruned";
 
-  beforeEach(() => {
-    pruneEntries(sid, 0);
+  beforeEach(async () => {
+    await pruneEntries(sid, 0);
   });
 
-  it("returns only windowed entries and fullText", () => {
+  it("returns only windowed entries and fullText", async () => {
     const entries = Array.from({ length: 5 }, (_, i) =>
       makeEntry(sid, `word${i}`)
     );
-    appendEntries(sid, entries);
+    await appendEntries(sid, entries);
 
     // Prune to keep only last 2
-    pruneEntries(sid, 2);
+    await pruneEntries(sid, 2);
 
-    const { entries: result, fullText } = getTranscript(sid);
+    const { entries: result, fullText } = await getTranscript(sid);
     expect(result).toHaveLength(2);
     expect(fullText).toBe("word3 word4");
   });
@@ -186,14 +186,14 @@ describe("checklist idempotency after pruning", () => {
     const sid = "checklist-prune-test";
 
     // Simulate: item was checked when matching text existed
-    markChecked(sid, "item-1");
-    expect(getCheckedIds(sid)).toContain("item-1");
+    await markChecked(sid, "item-1");
+    expect(await getCheckedIds(sid)).toContain("item-1");
 
     // Prune all transcript entries
-    pruneEntries(sid, 0);
-    expect(getEntries(sid)).toHaveLength(0);
+    await pruneEntries(sid, 0);
+    expect(await getEntries(sid)).toHaveLength(0);
 
     // Checked state is preserved (independent store)
-    expect(getCheckedIds(sid)).toContain("item-1");
+    expect(await getCheckedIds(sid)).toContain("item-1");
   });
 });

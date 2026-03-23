@@ -1,20 +1,52 @@
+import { prisma } from "@/lib/db";
 import { Policy, PolicySummary } from "@/lib/domain/types";
 
-const g = globalThis as unknown as { _policies?: Map<string, Policy> };
-const policies = (g._policies ??= new Map<string, Policy>());
-
-export function savePolicy(policy: Policy): void {
-  policies.set(policy.id, policy);
+export async function savePolicy(policy: Policy): Promise<void> {
+  await prisma.policy.create({
+    data: {
+      id: policy.id,
+      name: policy.name,
+      text: policy.text,
+      createdAt: new Date(policy.createdAt),
+      checklist: {
+        create: policy.checklist.map((item) => ({
+          id: item.id,
+          text: item.text,
+          order: item.order,
+        })),
+      },
+    },
+  });
 }
 
-export function getPolicy(id: string): Policy | undefined {
-  return policies.get(id);
+export async function getPolicy(id: string): Promise<Policy | undefined> {
+  const row = await prisma.policy.findUnique({
+    where: { id },
+    include: { checklist: { orderBy: { order: "asc" } } },
+  });
+  if (!row) return undefined;
+  return {
+    id: row.id,
+    name: row.name,
+    text: row.text,
+    createdAt: row.createdAt.toISOString(),
+    checklist: row.checklist.map((c) => ({
+      id: c.id,
+      policyId: c.policyId,
+      text: c.text,
+      order: c.order,
+    })),
+  };
 }
 
-export function listPolicies(): PolicySummary[] {
-  return Array.from(policies.values()).map(({ id, name, createdAt }) => ({
-    id,
-    name,
-    createdAt,
+export async function listPolicies(): Promise<PolicySummary[]> {
+  const rows = await prisma.policy.findMany({
+    select: { id: true, name: true, createdAt: true },
+    orderBy: { createdAt: "desc" },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    createdAt: r.createdAt.toISOString(),
   }));
 }

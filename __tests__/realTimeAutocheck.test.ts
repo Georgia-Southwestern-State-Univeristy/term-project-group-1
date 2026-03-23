@@ -12,16 +12,16 @@ import { getCheckedIds } from "@/lib/repositories/checklistStateRepo";
 import { agentAuthHeaders, AGENT_USER_ID } from "@/lib/test-helpers/auth";
 
 describe("Week 7 — Real-time transcription & auto-checklist", () => {
-  it("checks a checklist item when transcript contains matching text", () => {
-    const policy = createPolicyFromText(
+  it("checks a checklist item when transcript contains matching text", async () => {
+    const policy = await createPolicyFromText(
       "Security Protocol",
       "Verify caller identity\nConfirm account number"
     );
-    const result = createSession(policy.id, "test-owner");
+    const result = await createSession(policy.id, "test-owner");
     if (!result.success) throw new Error("session creation failed");
     const session = result.session;
 
-    appendTranscriptEvents(session.id, [
+    await appendTranscriptEvents(session.id, [
       {
         text: "I need to verify caller identity before proceeding",
         isFinal: true,
@@ -29,8 +29,8 @@ describe("Week 7 — Real-time transcription & auto-checklist", () => {
       },
     ]);
 
-    const { fullText } = getTranscript(session.id);
-    const newlyChecked = autoCheckChecklist(
+    const { fullText } = await getTranscript(session.id);
+    const newlyChecked = await autoCheckChecklist(
       session.id,
       policy.checklist,
       fullText!
@@ -42,7 +42,7 @@ describe("Week 7 — Real-time transcription & auto-checklist", () => {
     )!;
     expect(newlyChecked).toContain(verifyItem.id);
 
-    const allChecked = getCheckedIds(session.id);
+    const allChecked = await getCheckedIds(session.id);
     expect(allChecked).toContain(verifyItem.id);
     expect(allChecked).not.toContain(
       policy.checklist.find((c) => c.text.includes("Confirm account number"))!
@@ -50,13 +50,13 @@ describe("Week 7 — Real-time transcription & auto-checklist", () => {
     );
   });
 
-  it("builds fullText from final entries only and stores all entries", () => {
-    const policy = createPolicyFromText("Test Policy", "Item one");
-    const result = createSession(policy.id, "test-owner");
+  it("builds fullText from final entries only and stores all entries", async () => {
+    const policy = await createPolicyFromText("Test Policy", "Item one");
+    const result = await createSession(policy.id, "test-owner");
     if (!result.success) throw new Error("session creation failed");
     const session = result.session;
 
-    appendTranscriptEvents(session.id, [
+    await appendTranscriptEvents(session.id, [
       {
         text: "partial speech",
         isFinal: false,
@@ -79,19 +79,19 @@ describe("Week 7 — Real-time transcription & auto-checklist", () => {
       },
     ]);
 
-    const { entries, fullText } = getTranscript(session.id);
+    const { entries, fullText } = await getTranscript(session.id);
 
     expect(entries).toHaveLength(4);
     expect(fullText).toBe("final sentence one final sentence two");
   });
 
   it("rejects transcript events for an ended session (409)", async () => {
-    const policy = createPolicyFromText("End Test", "Some item");
-    const createResult = createSession(policy.id, AGENT_USER_ID);
+    const policy = await createPolicyFromText("End Test", "Some item");
+    const createResult = await createSession(policy.id, AGENT_USER_ID);
     if (!createResult.success) throw new Error("session creation failed");
     const session = createResult.session;
 
-    endSession(session.id);
+    await endSession(session.id);
 
     const { POST } =
       await import("@/app/api/sessions/[sessionId]/transcript-events/route");
@@ -121,16 +121,16 @@ describe("Week 7 — Real-time transcription & auto-checklist", () => {
     expect(response.status).toBe(409);
   });
 
-  it("matches checklist items regardless of casing, whitespace, and punctuation", () => {
-    const policy = createPolicyFromText(
+  it("matches checklist items regardless of casing, whitespace, and punctuation", async () => {
+    const policy = await createPolicyFromText(
       "Fuzzy Policy",
       "Verify caller identity\nConfirm date of birth"
     );
-    const result = createSession(policy.id, "test-owner");
+    const result = await createSession(policy.id, "test-owner");
     if (!result.success) throw new Error("session creation failed");
     const session = result.session;
 
-    appendTranscriptEvents(session.id, [
+    await appendTranscriptEvents(session.id, [
       {
         text: "VERIFY   CALLER... IDENTITY!!",
         isFinal: true,
@@ -143,8 +143,8 @@ describe("Week 7 — Real-time transcription & auto-checklist", () => {
       },
     ]);
 
-    const { fullText } = getTranscript(session.id);
-    const newlyChecked = autoCheckChecklist(
+    const { fullText } = await getTranscript(session.id);
+    const newlyChecked = await autoCheckChecklist(
       session.id,
       policy.checklist,
       fullText!

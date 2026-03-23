@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  role         String // "agent" | "supervisor"
+  name         String
+  sessions     Session[]
+
+  @@map("users")
+}
+
+model Policy {
+  id        String          @id @default(uuid())
+  name      String
+  text      String
+  createdAt DateTime        @default(now()) @map("created_at")
+  checklist ChecklistItem[]
+  sessions  Session[]
+
+  @@map("policies")
+}
+
+model ChecklistItem {
+  id       String @id @default(uuid())
+  policyId String @map("policy_id")
+  text     String
+  order    Int
+  policy   Policy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@map("checklist_items")
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  policyId  String    @map("policy_id")
+  ownerId   String    @map("owner_id")
+  status    String    @default("active") // "active" | "ended"
+  createdAt DateTime  @default(now()) @map("created_at")
+  endedAt   DateTime? @map("ended_at")
+
+  policy             Policy              @relation(fields: [policyId], references: [id])
+  owner              User                @relation(fields: [ownerId], references: [id])
+  transcriptEntries  TranscriptEntry[]
+  frequencySnapshots FrequencySnapshot[]
+  checklistStates    ChecklistState[]
+
+  @@map("sessions")
+}
+
+model TranscriptEntry {
+  id         String   @id @default(uuid())
+  sessionId  String   @map("session_id")
+  text       String
+  isFinal    Boolean  @map("is_final")
+  occurredAt DateTime @map("occurred_at")
+  confidence Float?
+  startMs    Int?     @map("start_ms")
+  endMs      Int?     @map("end_ms")
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("transcript_entries")
+}
+
+model FrequencySnapshot {
+  id                  String   @id @default(uuid())
+  sessionId           String   @map("session_id")
+  occurredAt          DateTime @map("occurred_at")
+  dominantFrequencyHz Float    @map("dominant_frequency_hz")
+  frequencyBins       Json     @map("frequency_bins") // number[]
+  sampleRateHz        Float    @map("sample_rate_hz")
+  fftSize             Int      @map("fft_size")
+  binResolutionHz     Float    @map("bin_resolution_hz")
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("frequency_snapshots")
+}
+
+model ChecklistState {
+  sessionId String  @map("session_id")
+  itemId    String  @map("item_id")
+  checked   Boolean @default(true)
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@id([sessionId, itemId])
+  @@map("checklist_states")
+}

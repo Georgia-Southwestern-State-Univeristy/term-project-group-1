@@ -1,22 +1,39 @@
+import { prisma } from "@/lib/db";
 import { FrequencySnapshot } from "@/lib/domain/types";
 
-const g = globalThis as unknown as {
-  _frequencySnapshots?: Map<string, FrequencySnapshot[]>;
-};
-const snapshots = (g._frequencySnapshots ??= new Map<
-  string,
-  FrequencySnapshot[]
->());
-
-export function appendSnapshot(
+export async function appendSnapshot(
   sessionId: string,
   snapshot: FrequencySnapshot
-): void {
-  const existing = snapshots.get(sessionId) ?? [];
-  existing.push(snapshot);
-  snapshots.set(sessionId, existing);
+): Promise<void> {
+  await prisma.frequencySnapshot.create({
+    data: {
+      id: snapshot.id,
+      sessionId,
+      occurredAt: new Date(snapshot.occurredAt),
+      dominantFrequencyHz: snapshot.dominantFrequencyHz,
+      frequencyBins: snapshot.frequencyBins,
+      sampleRateHz: snapshot.sampleRateHz,
+      fftSize: snapshot.fftSize,
+      binResolutionHz: snapshot.binResolutionHz,
+    },
+  });
 }
 
-export function getSnapshots(sessionId: string): FrequencySnapshot[] {
-  return snapshots.get(sessionId) ?? [];
+export async function getSnapshots(
+  sessionId: string
+): Promise<FrequencySnapshot[]> {
+  const rows = await prisma.frequencySnapshot.findMany({
+    where: { sessionId },
+    orderBy: { occurredAt: "asc" },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    sessionId: r.sessionId,
+    occurredAt: r.occurredAt.toISOString(),
+    dominantFrequencyHz: r.dominantFrequencyHz,
+    frequencyBins: r.frequencyBins as number[],
+    sampleRateHz: r.sampleRateHz,
+    fftSize: r.fftSize,
+    binResolutionHz: r.binResolutionHz,
+  }));
 }

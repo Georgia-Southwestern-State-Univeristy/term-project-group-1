@@ -18,7 +18,7 @@ export async function POST(
 
   const { sessionId } = await params;
 
-  const session = getSession(sessionId);
+  const session = await getSession(sessionId);
   if (!session) {
     logger.error("api.error", {
       sessionId,
@@ -30,7 +30,7 @@ export async function POST(
   const forbidden = assertOwnership(session, auth);
   if (forbidden) return forbidden;
 
-  const result = endSession(sessionId);
+  const result = await endSession(sessionId);
 
   if (!result.success) {
     logger.error("api.error", {

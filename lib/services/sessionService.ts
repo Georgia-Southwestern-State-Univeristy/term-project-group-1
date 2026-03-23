@@ -6,11 +6,11 @@ type CreateSessionResult =
   | { success: true; session: Session }
   | { success: false; error: "not_found" };
 
-export function createSession(
+export async function createSession(
   policyId: string,
   ownerId: string
-): CreateSessionResult {
-  const policy = getPolicy(policyId);
+): Promise<CreateSessionResult> {
+  const policy = await getPolicy(policyId);
   if (!policy) {
     return { success: false, error: "not_found" };
   }
@@ -23,7 +23,7 @@ export function createSession(
     createdAt: new Date().toISOString(),
   };
 
-  saveSession(session);
+  await saveSession(session);
   return { success: true, session };
 }
 
@@ -31,8 +31,8 @@ type EndSessionResult =
   | { success: true; session: Session; alreadyEnded: boolean }
   | { success: false; error: "not_found" };
 
-export function endSession(sessionId: string): EndSessionResult {
-  const session = getSession(sessionId);
+export async function endSession(sessionId: string): Promise<EndSessionResult> {
+  const session = await getSession(sessionId);
   if (!session) {
     return { success: false, error: "not_found" };
   }
@@ -43,6 +43,6 @@ export function endSession(sessionId: string): EndSessionResult {
 
   session.status = "ended";
   session.endedAt = new Date().toISOString();
-  saveSession(session);
+  await saveSession(session);
   return { success: true, session, alreadyEnded: false };
 }

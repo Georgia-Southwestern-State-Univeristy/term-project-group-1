@@ -1,15 +1,10 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import CallPage from "../call/page";
-
-const mockSession = {
-  sessionId: "abc-123",
-  status: "created",
-};
 
 beforeEach(() => {
   global.fetch = jest.fn().mockResolvedValue({
-    json: () => Promise.resolve(mockSession),
+    ok: true,
+    json: () => Promise.resolve([]),
   });
 });
 
@@ -21,28 +16,35 @@ describe("CallPage", () => {
   it("renders the heading and start button", () => {
     render(<CallPage />);
     expect(
-      screen.getByRole("heading", { name: "Call Session" })
+      screen.getByRole("heading", { name: "Start Call Session" })
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Start Session" })
     ).toBeInTheDocument();
   });
 
-  it("does not show session info before starting", () => {
+  it("renders policy selector", () => {
     render(<CallPage />);
-    expect(screen.queryByText(/Session ID/)).not.toBeInTheDocument();
+    expect(screen.getByText("Select Policy")).toBeInTheDocument();
+    expect(screen.getByRole("combobox")).toBeInTheDocument();
   });
 
-  it("fetches and displays session info when button is clicked", async () => {
-    const user = userEvent.setup();
+  it("disables start button when no policy selected", () => {
     render(<CallPage />);
+    expect(
+      screen.getByRole("button", { name: "Start Session" })
+    ).toBeDisabled();
+  });
 
-    await user.click(screen.getByRole("button", { name: "Start Session" }));
-
-    expect(global.fetch).toHaveBeenCalledWith("/api/session", {
-      method: "POST",
-    });
-    expect(await screen.findByText(/abc-123/)).toBeInTheDocument();
-    expect(screen.getByText(/created/)).toBeInTheDocument();
+  it("fetches policies on mount", () => {
+    render(<CallPage />);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/policies",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+        }),
+      })
+    );
   });
 });

@@ -82,6 +82,14 @@ export interface FrequencyEvent {
   binResolutionHz: number;
 }
 
+export interface ThreatScoreBreakdown {
+  overall: number;
+  frequencyScore: number;
+  complianceScore: number;
+  keywordScore: number;
+  level: "low" | "medium" | "high" | "critical";
+}
+
 export type UserRole = "agent" | "supervisor";
 
 export interface User {

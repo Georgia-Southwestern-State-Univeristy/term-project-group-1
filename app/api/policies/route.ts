@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const policy = createPolicyFromText(name.trim(), text);
+  const policy = await createPolicyFromText(name.trim(), text);
 
   if (policy.checklist.length === 0) {
     logger.error("api.error", {
@@ -116,6 +116,6 @@ export async function GET(request: Request) {
   const authResult = await authenticateRequest(request);
   if (!authResult.success) return authErrorResponse(authResult.error);
 
-  const policies = listPolicies();
+  const policies = await listPolicies();
   return NextResponse.json({ policies });
 }

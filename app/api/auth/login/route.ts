@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserByEmail } from "@/lib/repositories/userRepo";
-import { ensureSeedUsers } from "@/lib/repositories/seedUsers";
 import { signToken, verifyPassword } from "@/lib/auth";
 import { logger } from "@/lib/logger";
-
-ensureSeedUsers();
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -30,7 +27,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const user = getUserByEmail(email.trim());
+  const user = await getUserByEmail(email.trim());
 
   if (!user || !verifyPassword(password, user.passwordHash)) {
     logger.warn("auth.login_failed", { data: { email: email.trim() } });

@@ -11,6 +11,7 @@ import {
 } from "@/lib/auth";
 import { logger } from "@/lib/logger";
 import { getSnapshots } from "@/lib/repositories/frequencyRepo";
+import { computeThreatScore } from "@/lib/services/threatScoreService";
 
 export async function GET(
   request: Request,
@@ -22,7 +23,7 @@ export async function GET(
 
   const { sessionId } = await params;
 
-  const session = getSession(sessionId);
+  const session = await getSession(sessionId);
   if (!session) {
     logger.error("api.error", {
       sessionId,
@@ -34,9 +35,9 @@ export async function GET(
   const forbidden = assertOwnership(session, auth);
   if (forbidden) return forbidden;
 
-  const policy = fetchPolicy(session.policyId);
-  const transcript = getTranscript(sessionId);
-  const checkedIds = new Set(getCheckedIds(sessionId));
+  const policy = await fetchPolicy(session.policyId);
+  const transcript = await getTranscript(sessionId);
+  const checkedIds = new Set(await getCheckedIds(sessionId));
 
   const checklistState: ChecklistStateRow[] = (policy?.checklist ?? []).map(
     (item) => ({
@@ -46,7 +47,14 @@ export async function GET(
     })
   );
 
-  const frequencySnapshots = getSnapshots(sessionId);
+  const frequencySnapshots = await getSnapshots(sessionId);
+
+  const threatScore = computeThreatScore(
+    frequencySnapshots,
+    policy?.checklist.length ?? 0,
+    checkedIds.size,
+    transcript.fullText ?? ""
+  );
 
   return NextResponse.json({
     session,
@@ -56,5 +64,6 @@ export async function GET(
     },
     checklistState,
     frequencySnapshots,
+    threatScore,
   });
 }

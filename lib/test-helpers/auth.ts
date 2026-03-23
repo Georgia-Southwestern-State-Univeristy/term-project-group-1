@@ -6,15 +6,15 @@ import { User } from "@/lib/domain/types";
 export const AGENT_USER_ID = "seed-agent-001";
 export const SUPERVISOR_USER_ID = "seed-supervisor-001";
 
-function getSeededUser(email: string): User {
-  ensureSeedUsers();
-  const user = getUserByEmail(email);
+async function getSeededUser(email: string): Promise<User> {
+  await ensureSeedUsers();
+  const user = await getUserByEmail(email);
   if (!user) throw new Error(`Seed user ${email} not found`);
   return user;
 }
 
 export async function agentAuthHeaders(): Promise<Record<string, string>> {
-  const user = getSeededUser("agent@sentinel.local");
+  const user = await getSeededUser("agent@sentinel.local");
   const token = await signToken(user);
   return {
     "Content-Type": "application/json",
@@ -23,7 +23,7 @@ export async function agentAuthHeaders(): Promise<Record<string, string>> {
 }
 
 export async function supervisorAuthHeaders(): Promise<Record<string, string>> {
-  const user = getSeededUser("supervisor@sentinel.local");
+  const user = await getSeededUser("supervisor@sentinel.local");
   const token = await signToken(user);
   return {
     "Content-Type": "application/json",

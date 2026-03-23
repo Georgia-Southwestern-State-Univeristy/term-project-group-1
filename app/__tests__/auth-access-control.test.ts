@@ -9,8 +9,8 @@ import {
 } from "@/lib/test-helpers/auth";
 import { ensureSeedUsers } from "@/lib/repositories/seedUsers";
 
-beforeAll(() => {
-  ensureSeedUsers();
+beforeAll(async () => {
+  await ensureSeedUsers();
 });
 
 /* ── Login ────────────────────────────────────── */
@@ -83,7 +83,7 @@ describe("unauthenticated access returns 401", () => {
 
 describe("session creation with auth", () => {
   it("creates session with ownerId matching authenticated user", async () => {
-    const policy = createPolicyFromText("Auth Test", "Check step");
+    const policy = await createPolicyFromText("Auth Test", "Check step");
     const headers = await agentAuthHeaders();
     const { POST } = await import("@/app/api/sessions/route");
 
@@ -107,7 +107,7 @@ describe("session ownership", () => {
   let sessionId: string;
 
   beforeAll(async () => {
-    const policy = createPolicyFromText("Ownership Test", "Item A");
+    const policy = await createPolicyFromText("Ownership Test", "Item A");
     const headers = await agentAuthHeaders();
     const { POST } = await import("@/app/api/sessions/route");
 
@@ -139,7 +139,7 @@ describe("session ownership", () => {
     // different agent. Since we only have one agent seed user, we use
     // a supervisor to create a session and then try the agent token.
     const { POST } = await import("@/app/api/sessions/route");
-    const policy = createPolicyFromText("Other Owner", "Item B");
+    const policy = await createPolicyFromText("Other Owner", "Item B");
 
     const supRes = await POST(
       new Request("http://localhost/api/sessions", {

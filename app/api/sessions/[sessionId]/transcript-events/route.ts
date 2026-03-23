@@ -68,7 +68,7 @@ export async function POST(
 
   const { sessionId } = await params;
 
-  const session = getSession(sessionId);
+  const session = await getSession(sessionId);
   if (!session) {
     logger.error("api.error", {
       sessionId,
@@ -141,18 +141,18 @@ export async function POST(
   }
 
   const typedEvents = events as TranscriptEvent[];
-  const { latestText } = appendTranscriptEvents(sessionId, typedEvents);
+  const { latestText } = await appendTranscriptEvents(sessionId, typedEvents);
 
   const newText = typedEvents.map((e) => e.text).join(" ");
 
-  const policy = fetchPolicy(session.policyId);
+  const policy = await fetchPolicy(session.policyId);
   let checkedItemIds: string[] = [];
   if (policy && newText) {
-    autoCheckChecklist(sessionId, policy.checklist, newText);
+    await autoCheckChecklist(sessionId, policy.checklist, newText);
   }
-  checkedItemIds = getCheckedIds(sessionId);
+  checkedItemIds = await getCheckedIds(sessionId);
 
-  const { entries } = getTranscript(sessionId);
+  const { entries } = await getTranscript(sessionId);
 
   logger.info("transcript.ingest", {
     sessionId,
