@@ -22,7 +22,7 @@ export async function GET(
 
   const { sessionId } = await params;
 
-  const session = getSession(sessionId);
+  const session = await getSession(sessionId);
   if (!session) {
     logger.error("api.error", {
       sessionId,
@@ -34,9 +34,9 @@ export async function GET(
   const forbidden = assertOwnership(session, auth);
   if (forbidden) return forbidden;
 
-  const policy = fetchPolicy(session.policyId);
-  const transcript = getTranscript(sessionId);
-  const checkedIds = new Set(getCheckedIds(sessionId));
+  const policy = await fetchPolicy(session.policyId);
+  const transcript = await getTranscript(sessionId);
+  const checkedIds = new Set(await getCheckedIds(sessionId));
 
   const checklistState: ChecklistStateRow[] = (policy?.checklist ?? []).map(
     (item) => ({
@@ -46,7 +46,7 @@ export async function GET(
     })
   );
 
-  const frequencySnapshots = getSnapshots(sessionId);
+  const frequencySnapshots = await getSnapshots(sessionId);
 
   return NextResponse.json({
     session,

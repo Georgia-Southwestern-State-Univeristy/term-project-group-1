@@ -6,10 +6,10 @@ import {
 } from "@/lib/repositories/transcriptRepo";
 import { TRANSCRIPT_WINDOW_CHAR_LIMIT } from "@/lib/config/transcription";
 
-export function appendTranscriptEvents(
+export async function appendTranscriptEvents(
   sessionId: string,
   events: TranscriptEvent[]
-): { entryCountDelta: number; latestText: string } {
+): Promise<{ entryCountDelta: number; latestText: string }> {
   const entries: TranscriptEntry[] = events.map((e) => ({
     id: crypto.randomUUID(),
     sessionId,
@@ -21,8 +21,8 @@ export function appendTranscriptEvents(
     endMs: e.endMs,
   }));
 
-  repoAppendEntries(sessionId, entries);
-  pruneIfNeeded(sessionId);
+  await repoAppendEntries(sessionId, entries);
+  await pruneIfNeeded(sessionId);
 
   return {
     entryCountDelta: entries.length,
@@ -30,11 +30,11 @@ export function appendTranscriptEvents(
   };
 }
 
-export function pruneIfNeeded(
+export async function pruneIfNeeded(
   sessionId: string,
   charLimit: number = TRANSCRIPT_WINDOW_CHAR_LIMIT
-): void {
-  const entries = getEntries(sessionId);
+): Promise<void> {
+  const entries = await getEntries(sessionId);
   const totalChars = entries
     .filter((e) => e.isFinal)
     .reduce((sum, e) => sum + e.text.length, 0);
@@ -52,14 +52,14 @@ export function pruneIfNeeded(
     keepFrom = i;
   }
 
-  pruneEntries(sessionId, entries.length - keepFrom);
+  await pruneEntries(sessionId, entries.length - keepFrom);
 }
 
-export function getTranscript(sessionId: string): {
+export async function getTranscript(sessionId: string): Promise<{
   entries: TranscriptEntry[];
   fullText: string | null;
-} {
-  const entries = getEntries(sessionId);
+}> {
+  const entries = await getEntries(sessionId);
   const finals = entries.filter((e) => e.isFinal);
   const fullText =
     finals.length > 0 ? finals.map((e) => e.text).join(" ") : null;

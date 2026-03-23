@@ -23,7 +23,7 @@ function makeParams(sessionId: string) {
 
 beforeAll(async () => {
   headers = await agentAuthHeaders();
-  saveSession({
+  await saveSession({
     id: SESSION_ID,
     policyId: "p1",
     ownerId: AGENT_USER_ID,
@@ -61,7 +61,7 @@ describe("POST /api/sessions/[sessionId]/frequency", () => {
 
   it("returns 409 for ended session", async () => {
     const endedId = `ended-${Date.now()}`;
-    saveSession({
+    await saveSession({
       id: endedId,
       policyId: "p1",
       ownerId: AGENT_USER_ID,

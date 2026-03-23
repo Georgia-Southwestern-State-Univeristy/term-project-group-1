@@ -11,7 +11,7 @@ export async function GET(
 
   const { policyId } = await params;
 
-  const policy = fetchPolicy(policyId);
+  const policy = await fetchPolicy(policyId);
   if (!policy) {
     return NextResponse.json({ error: "Policy not found" }, { status: 404 });
   }

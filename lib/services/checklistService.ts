@@ -12,12 +12,12 @@ function normalize(s: string): string {
     .trim();
 }
 
-export function autoCheckChecklist(
+export async function autoCheckChecklist(
   sessionId: string,
   checklistItems: ChecklistItem[],
   transcriptText: string
-): string[] {
-  const alreadyChecked = new Set(getCheckedIds(sessionId));
+): Promise<string[]> {
+  const alreadyChecked = new Set(await getCheckedIds(sessionId));
   const normalizedTranscript = normalize(transcriptText);
   const newlyChecked: string[] = [];
 
@@ -26,7 +26,7 @@ export function autoCheckChecklist(
 
     const normalizedItem = normalize(item.text);
     if (normalizedTranscript.includes(normalizedItem)) {
-      markChecked(sessionId, item.id);
+      await markChecked(sessionId, item.id);
       newlyChecked.push(item.id);
     }
   }

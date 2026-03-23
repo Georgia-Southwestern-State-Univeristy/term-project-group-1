@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = createSession(policyId.trim(), auth.userId);
+  const result = await createSession(policyId.trim(), auth.userId);
 
   if (!result.success) {
     logger.error("api.error", {

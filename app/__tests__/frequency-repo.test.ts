@@ -24,28 +24,28 @@ function makeSnapshot(
 describe("frequencyRepo", () => {
   const sessionId = `test-freq-${Date.now()}`;
 
-  it("returns empty array for unknown session", () => {
-    expect(getSnapshots("nonexistent")).toEqual([]);
+  it("returns empty array for unknown session", async () => {
+    expect(await getSnapshots("nonexistent")).toEqual([]);
   });
 
-  it("appends and retrieves snapshots", () => {
+  it("appends and retrieves snapshots", async () => {
     const snap = makeSnapshot(sessionId);
-    appendSnapshot(sessionId, snap);
+    await appendSnapshot(sessionId, snap);
 
-    const result = getSnapshots(sessionId);
+    const result = await getSnapshots(sessionId);
     expect(result).toHaveLength(1);
     expect(result[0].dominantFrequencyHz).toBe(440);
   });
 
-  it("appends multiple snapshots in order", () => {
+  it("appends multiple snapshots in order", async () => {
     const id = `test-freq-multi-${Date.now()}`;
     const snap1 = makeSnapshot(id, { dominantFrequencyHz: 200 });
     const snap2 = makeSnapshot(id, { dominantFrequencyHz: 800 });
 
-    appendSnapshot(id, snap1);
-    appendSnapshot(id, snap2);
+    await appendSnapshot(id, snap1);
+    await appendSnapshot(id, snap2);
 
-    const result = getSnapshots(id);
+    const result = await getSnapshots(id);
     expect(result).toHaveLength(2);
     expect(result[0].dominantFrequencyHz).toBe(200);
     expect(result[1].dominantFrequencyHz).toBe(800);

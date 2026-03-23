@@ -40,10 +40,14 @@ async function main() {
 
 function startNext(port) {
   console.log(`Starting Next.js dev server on port ${port}...`);
-  const child = spawn("npx", ["next", "dev", "--turbopack", "-p", String(port)], {
-    stdio: "inherit",
-    shell: true,
-  });
+  const child = spawn(
+    "npx",
+    ["next", "dev", "--turbopack", "-p", String(port)],
+    {
+      stdio: "inherit",
+      shell: true,
+    }
+  );
   child.on("exit", (code) => process.exit(code ?? 0));
 }
 
