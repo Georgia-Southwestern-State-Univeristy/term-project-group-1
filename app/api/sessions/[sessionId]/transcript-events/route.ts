@@ -14,49 +14,10 @@ import {
   assertOwnership,
 } from "@/lib/auth";
 import { logger } from "@/lib/logger";
-
-const MAX_EVENTS_PER_REQUEST = 50;
-const MAX_EVENT_TEXT_LENGTH = 10_000;
-
-function validateEvents(
-  events: unknown[]
-): { valid: true } | { valid: false; message: string } {
-  if (events.length > MAX_EVENTS_PER_REQUEST) {
-    return {
-      valid: false,
-      message: `Too many events: received ${events.length}, maximum is ${MAX_EVENTS_PER_REQUEST}`,
-    };
-  }
-
-  for (let i = 0; i < events.length; i++) {
-    const e = events[i] as Record<string, unknown>;
-    if (typeof e.text !== "string" || e.text.trim().length === 0) {
-      return {
-        valid: false,
-        message: `events[${i}] is invalid: 'text' must be a non-empty string`,
-      };
-    }
-    if (e.text.length > MAX_EVENT_TEXT_LENGTH) {
-      return {
-        valid: false,
-        message: `events[${i}] is invalid: 'text' exceeds ${MAX_EVENT_TEXT_LENGTH} character limit`,
-      };
-    }
-    if (typeof e.isFinal !== "boolean") {
-      return {
-        valid: false,
-        message: `events[${i}] is invalid: 'isFinal' must be a boolean`,
-      };
-    }
-    if (typeof e.occurredAt !== "string" || e.occurredAt.trim().length === 0) {
-      return {
-        valid: false,
-        message: `events[${i}] is invalid: 'occurredAt' must be a non-empty string`,
-      };
-    }
-  }
-  return { valid: true };
-}
+import {
+  transcriptEventsBodySchema,
+  formatZodError,
+} from "@/lib/validation/schemas";
 
 export async function POST(
   request: Request,
@@ -110,63 +71,61 @@ export async function POST(
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { events } = body as Record<string, unknown>;
-
-  if (!Array.isArray(events) || events.length === 0) {
+  const parsed = transcriptEventsBodySchema.safeParse(body);
+  if (!parsed.success) {
+    const message = formatZodError(parsed.error.issues);
     logger.error("api.error", {
       sessionId,
       data: {
         route: "POST /api/sessions/[id]/transcript-events",
         status: 400,
-        reason: "events must be a non-empty array",
+        reason: message,
+      },
+    });
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+
+  try {
+    const typedEvents = parsed.data.events as TranscriptEvent[];
+    const { latestText } = await appendTranscriptEvents(sessionId, typedEvents);
+
+    const newText = typedEvents.map((e) => e.text).join(" ");
+
+    const policy = await fetchPolicy(session.policyId);
+    let checkedItemIds: string[] = [];
+    if (policy && newText) {
+      await autoCheckChecklist(sessionId, policy.checklist, newText);
+    }
+    checkedItemIds = await getCheckedIds(sessionId);
+
+    const { entries } = await getTranscript(sessionId);
+
+    logger.info("transcript.ingest", {
+      sessionId,
+      data: {
+        eventCount: typedEvents.length,
+        totalEntries: entries.length,
+        latestText,
+      },
+    });
+
+    return NextResponse.json({
+      sessionId,
+      transcriptEntryCount: entries.length,
+      checkedItemIds,
+      latestText,
+    });
+  } catch (err) {
+    logger.error("db.error", {
+      sessionId,
+      data: {
+        route: "POST /api/sessions/[id]/transcript-events",
+        message: err instanceof Error ? err.message : "Unknown error",
       },
     });
     return NextResponse.json(
-      { error: "events must be a non-empty array" },
-      { status: 400 }
+      { error: "Internal server error" },
+      { status: 500 }
     );
   }
-
-  const validation = validateEvents(events);
-  if (!validation.valid) {
-    logger.error("api.error", {
-      sessionId,
-      data: {
-        route: "POST /api/sessions/[id]/transcript-events",
-        status: 400,
-        reason: validation.message,
-      },
-    });
-    return NextResponse.json({ error: validation.message }, { status: 400 });
-  }
-
-  const typedEvents = events as TranscriptEvent[];
-  const { latestText } = await appendTranscriptEvents(sessionId, typedEvents);
-
-  const newText = typedEvents.map((e) => e.text).join(" ");
-
-  const policy = await fetchPolicy(session.policyId);
-  let checkedItemIds: string[] = [];
-  if (policy && newText) {
-    await autoCheckChecklist(sessionId, policy.checklist, newText);
-  }
-  checkedItemIds = await getCheckedIds(sessionId);
-
-  const { entries } = await getTranscript(sessionId);
-
-  logger.info("transcript.ingest", {
-    sessionId,
-    data: {
-      eventCount: events.length,
-      totalEntries: entries.length,
-      latestText,
-    },
-  });
-
-  return NextResponse.json({
-    sessionId,
-    transcriptEntryCount: entries.length,
-    checkedItemIds,
-    latestText,
-  });
 }

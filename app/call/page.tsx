@@ -76,6 +76,7 @@ export default function CallPage() {
   const [state, setState] = useState<SessionState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pollFailures, setPollFailures] = useState(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
@@ -93,15 +94,19 @@ export default function CallPage() {
       const res = await fetch(`/api/sessions/${sid}/state`, {
         headers: authHeaders(),
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        setPollFailures((prev) => prev + 1);
+        return;
+      }
       const data: SessionState = await res.json();
       setState(data);
+      setPollFailures(0);
       if (data.session.status === "ended" && pollRef.current) {
         clearInterval(pollRef.current);
         pollRef.current = null;
       }
     } catch {
-      /* ignore transient network errors */
+      setPollFailures((prev) => prev + 1);
     }
   }, []);
 
@@ -235,6 +240,21 @@ export default function CallPage() {
           </button>
         )}
       </header>
+
+      {pollFailures >= 2 && (
+        <div
+          className={`px-6 py-2 text-center text-sm font-medium ${
+            pollFailures >= 5
+              ? "bg-red-100 text-red-800"
+              : "bg-yellow-100 text-yellow-800"
+          }`}
+          role="alert"
+        >
+          {pollFailures >= 5
+            ? "Unable to connect. Please check your connection."
+            : "Connection lost — retrying..."}
+        </div>
+      )}
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">

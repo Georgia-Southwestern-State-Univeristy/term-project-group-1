@@ -160,13 +160,25 @@ export default function DemoPage() {
   }
 
   async function postTranscriptEvent(sessionId: string, text: string) {
-    await fetch(`/api/sessions/${sessionId}/transcript-events`, {
+    const res = await fetch(`/api/sessions/${sessionId}/transcript-events`, {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
         events: [{ text, isFinal: true, occurredAt: new Date().toISOString() }],
       }),
     });
+    if (!res.ok) {
+      if (res.status === 409) {
+        setError(
+          "Session has ended — transcript is no longer being saved."
+        );
+        return;
+      }
+      setError(
+        `Transcript save failed (${res.status}). Some audio may not be recorded.`
+      );
+      return;
+    }
     await refreshState(sessionId);
   }
 
@@ -183,7 +195,7 @@ export default function DemoPage() {
   /* ── start/stop streaming ────────────────────── */
 
   async function startStreaming() {
-    if (!session) return;
+    if (!session || session.status !== "active") return;
     setError(null);
 
     // 1. Get temp token
@@ -369,12 +381,19 @@ export default function DemoPage() {
     };
 
     ws.onerror = () => {
-      setError("WebSocket error — check browser console");
+      setError(
+        "WebSocket disconnected. Stop streaming and try again, or check your network connection."
+      );
       setStreaming(false);
     };
 
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       setStreaming(false);
+      if (event.code !== 1000 && event.code !== 1005) {
+        setError(
+          "Streaming connection closed unexpectedly. You may restart streaming."
+        );
+      }
     };
   }
 
