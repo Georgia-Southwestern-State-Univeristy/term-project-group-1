@@ -75,75 +75,75 @@ Each workflow step is mapped to the source files and PRs that implement it.
 
 ### Step 1: Authentication
 
-| Artifact | Path / Reference |
-|----------|-----------------|
-| Login page | `app/login/page.tsx` |
-| Login API | `app/api/auth/login/route.ts` |
-| JWT signing & verification | `lib/auth.ts` (uses `jose` HS256, 8h expiry) |
-| Role-based access control | `lib/auth.ts` — `assertOwnership()` (supervisors bypass, agents own-only) |
-| PR | [#44 — Add JWT auth, session ownership, and login page](https://github.com/Georgia-Southwestern-State-Univeristy/term-project-group-1/pull/44) |
+| Artifact                   | Path / Reference                                                                                                                               |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Login page                 | `app/login/page.tsx`                                                                                                                           |
+| Login API                  | `app/api/auth/login/route.ts`                                                                                                                  |
+| JWT signing & verification | `lib/auth.ts` (uses `jose` HS256, 8h expiry)                                                                                                   |
+| Role-based access control  | `lib/auth.ts` — `assertOwnership()` (supervisors bypass, agents own-only)                                                                      |
+| PR                         | [#44 — Add JWT auth, session ownership, and login page](https://github.com/Georgia-Southwestern-State-Univeristy/term-project-group-1/pull/44) |
 
 ### Step 2: Configuration (Policy Selection)
 
-| Artifact | Path / Reference |
-|----------|-----------------|
-| Policy CRUD API | `app/api/policies/route.ts` (POST creates policy + auto-generates checklist from text) |
-| Policy service | `lib/services/policyService.ts` — `createPolicyFromText()` |
-| Call page policy selector | `app/call/page.tsx` — fetches `GET /api/policies`, renders `<select>` |
-| Demo page policy creation | `app/demo/page.tsx` — inline form for name + text |
+| Artifact                  | Path / Reference                                                                       |
+| ------------------------- | -------------------------------------------------------------------------------------- |
+| Policy CRUD API           | `app/api/policies/route.ts` (POST creates policy + auto-generates checklist from text) |
+| Policy service            | `lib/services/policyService.ts` — `createPolicyFromText()`                             |
+| Call page policy selector | `app/call/page.tsx` — fetches `GET /api/policies`, renders `<select>`                  |
+| Demo page policy creation | `app/demo/page.tsx` — inline form for name + text                                      |
 
 ### Step 3: Live Ingestion
 
-| Artifact | Path / Reference |
-|----------|-----------------|
-| Session creation API | `app/api/sessions/route.ts` — `POST` creates session linked to policy + user |
-| Transcript event ingestion | `app/api/sessions/[sessionId]/transcript-events/route.ts` |
-| Transcript service (pruning) | `lib/services/transcriptService.ts` — 50K char window limit |
-| Frequency ingestion API | `app/api/sessions/[sessionId]/frequency/route.ts` — POST accepts FFT snapshots |
-| AssemblyAI WebSocket streaming | `app/demo/page.tsx` — real-time PCM audio via `wss://streaming.assemblyai.com` |
-| AudioWorklet processor | `public/worklets/pcm-processor.js` |
-| PR | [#47 — PostgreSQL migration, port detection, and threat scoring](https://github.com/Georgia-Southwestern-State-Univeristy/term-project-group-1/pull/47) |
+| Artifact                       | Path / Reference                                                                                                                                        |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Session creation API           | `app/api/sessions/route.ts` — `POST` creates session linked to policy + user                                                                            |
+| Transcript event ingestion     | `app/api/sessions/[sessionId]/transcript-events/route.ts`                                                                                               |
+| Transcript service (pruning)   | `lib/services/transcriptService.ts` — 50K char window limit                                                                                             |
+| Frequency ingestion API        | `app/api/sessions/[sessionId]/frequency/route.ts` — POST accepts FFT snapshots                                                                          |
+| AssemblyAI WebSocket streaming | `app/demo/page.tsx` — real-time PCM audio via `wss://streaming.assemblyai.com`                                                                          |
+| AudioWorklet processor         | `public/worklets/pcm-processor.js`                                                                                                                      |
+| PR                             | [#47 — PostgreSQL migration, port detection, and threat scoring](https://github.com/Georgia-Southwestern-State-Univeristy/term-project-group-1/pull/47) |
 
 ### Step 4: Real-time Analysis
 
-| Artifact | Path / Reference |
-|----------|-----------------|
-| Threat score computation | `lib/services/threatScoreService.ts` — `computeThreatScore()` |
-| Score weights config | `lib/config/threatScore.ts` — frequency 35%, compliance 35%, keyword 30% |
-| Session state API (returns score) | `app/api/sessions/[sessionId]/state/route.ts` |
-| Auto-checklist matching | `lib/services/checklistService.ts` — `autoCheckChecklist()` |
-| PR | [#47 — PostgreSQL migration, port detection, and threat scoring](https://github.com/Georgia-Southwestern-State-Univeristy/term-project-group-1/pull/47) |
+| Artifact                          | Path / Reference                                                                                                                                        |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Threat score computation          | `lib/services/threatScoreService.ts` — `computeThreatScore()`                                                                                           |
+| Score weights config              | `lib/config/threatScore.ts` — frequency 35%, compliance 35%, keyword 30%                                                                                |
+| Session state API (returns score) | `app/api/sessions/[sessionId]/state/route.ts`                                                                                                           |
+| Auto-checklist matching           | `lib/services/checklistService.ts` — `autoCheckChecklist()`                                                                                             |
+| PR                                | [#47 — PostgreSQL migration, port detection, and threat scoring](https://github.com/Georgia-Southwestern-State-Univeristy/term-project-group-1/pull/47) |
 
 ### Step 5: Termination & Persistence
 
-| Artifact | Path / Reference |
-|----------|-----------------|
-| Session end API (idempotent) | `app/api/sessions/[sessionId]/end/route.ts` |
-| Session service | `lib/services/sessionService.ts` — `endSession()` sets `status: "ended"`, `endedAt` |
-| Prisma schema (all tables) | `prisma/schema.prisma` — sessions, transcript_entries, frequency_snapshots, checklist_states |
-| Repository layer | `lib/repositories/sessionRepo.ts`, `transcriptRepo.ts`, `frequencyRepo.ts`, `checklistStateRepo.ts` |
-| PR | [#47 — PostgreSQL migration, port detection, and threat scoring](https://github.com/Georgia-Southwestern-State-Univeristy/term-project-group-1/pull/47) |
+| Artifact                     | Path / Reference                                                                                                                                        |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Session end API (idempotent) | `app/api/sessions/[sessionId]/end/route.ts`                                                                                                             |
+| Session service              | `lib/services/sessionService.ts` — `endSession()` sets `status: "ended"`, `endedAt`                                                                     |
+| Prisma schema (all tables)   | `prisma/schema.prisma` — sessions, transcript_entries, frequency_snapshots, checklist_states                                                            |
+| Repository layer             | `lib/repositories/sessionRepo.ts`, `transcriptRepo.ts`, `frequencyRepo.ts`, `checklistStateRepo.ts`                                                     |
+| PR                           | [#47 — PostgreSQL migration, port detection, and threat scoring](https://github.com/Georgia-Southwestern-State-Univeristy/term-project-group-1/pull/47) |
 
 ### Step 6: Audit Retrieval (History)
 
-| Artifact | Path / Reference |
-|----------|-----------------|
-| Session list API | `app/api/sessions/route.ts` — `GET` with `?status=ended` filter, role-based filtering |
-| History page | `app/history/page.tsx` — lists ended sessions, expandable detail with transcript/checklist/threat score |
-| Navigation bar | `app/components/NavBar.tsx` — global nav (Demo, Call, History, Logout) |
-| Session list service | `lib/services/sessionService.ts` — `listSessionsForUser()` |
-| Session list repository | `lib/repositories/sessionRepo.ts` — `listSessions()` with Prisma join for policy name |
-| Tests | `app/__tests__/api-sessions-list.test.ts` — 5 tests covering auth, role filtering, status filter |
-| PR | [#51 — Add session history page, list API, and global navigation](https://github.com/Georgia-Southwestern-State-Univeristy/term-project-group-1/pull/51) |
+| Artifact                | Path / Reference                                                                                                                                         |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Session list API        | `app/api/sessions/route.ts` — `GET` with `?status=ended` filter, role-based filtering                                                                    |
+| History page            | `app/history/page.tsx` — lists ended sessions, expandable detail with transcript/checklist/threat score                                                  |
+| Navigation bar          | `app/components/NavBar.tsx` — global nav (Demo, Call, History, Logout)                                                                                   |
+| Session list service    | `lib/services/sessionService.ts` — `listSessionsForUser()`                                                                                               |
+| Session list repository | `lib/repositories/sessionRepo.ts` — `listSessions()` with Prisma join for policy name                                                                    |
+| Tests                   | `app/__tests__/api-sessions-list.test.ts` — 5 tests covering auth, role filtering, status filter                                                         |
+| PR                      | [#51 — Add session history page, list API, and global navigation](https://github.com/Georgia-Southwestern-State-Univeristy/term-project-group-1/pull/51) |
 
 ---
 
 ## 4. Corrections from Original Draft
 
-| Original claim | Correction | Evidence |
-|----------------|-----------|----------|
-| Entry point is `/dashboard` | Actual entry is `/demo` or `/call` | No `app/dashboard/` directory exists |
-| Auth uses `NextAuth` | Auth uses custom JWT via `jose` only | `lib/auth.ts` imports `SignJWT`, `jwtVerify` from `jose`; no NextAuth dependency |
-| Session status `archived` / `completed` | Session status is `"active"` or `"ended"` | `lib/domain/types.ts:26`, `prisma/schema.prisma` |
-| Record contains `transcript_text` field | Transcript stored as separate `transcript_entries` rows | `prisma/schema.prisma` — `transcript_entries` table |
-| Record contains `composite_threat_score` field | Threat score is computed on-demand from related data | `lib/services/threatScoreService.ts` — `computeThreatScore()` |
+| Original claim                                 | Correction                                              | Evidence                                                                         |
+| ---------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Entry point is `/dashboard`                    | Actual entry is `/demo` or `/call`                      | No `app/dashboard/` directory exists                                             |
+| Auth uses `NextAuth`                           | Auth uses custom JWT via `jose` only                    | `lib/auth.ts` imports `SignJWT`, `jwtVerify` from `jose`; no NextAuth dependency |
+| Session status `archived` / `completed`        | Session status is `"active"` or `"ended"`               | `lib/domain/types.ts:26`, `prisma/schema.prisma`                                 |
+| Record contains `transcript_text` field        | Transcript stored as separate `transcript_entries` rows | `prisma/schema.prisma` — `transcript_entries` table                              |
+| Record contains `composite_threat_score` field | Threat score is computed on-demand from related data    | `lib/services/threatScoreService.ts` — `computeThreatScore()`                    |
