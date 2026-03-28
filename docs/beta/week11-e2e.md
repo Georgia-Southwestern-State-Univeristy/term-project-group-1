@@ -134,7 +134,7 @@ Each workflow step is mapped to the source files and PRs that implement it.
 | Session list service | `lib/services/sessionService.ts` — `listSessionsForUser()` |
 | Session list repository | `lib/repositories/sessionRepo.ts` — `listSessions()` with Prisma join for policy name |
 | Tests | `app/__tests__/api-sessions-list.test.ts` — 5 tests covering auth, role filtering, status filter |
-| PR | *(feat/history-page branch — pending)* |
+| PR | [#51 — Add session history page, list API, and global navigation](https://github.com/Georgia-Southwestern-State-Univeristy/term-project-group-1/pull/51) |
 
 ---
 
