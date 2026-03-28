@@ -18,10 +18,7 @@ import {
   appendTranscriptEvents,
   getTranscript,
 } from "@/lib/services/transcriptService";
-import {
-  agentAuthHeaders,
-  AGENT_USER_ID,
-} from "@/lib/test-helpers/auth";
+import { agentAuthHeaders, AGENT_USER_ID } from "@/lib/test-helpers/auth";
 import { ensureSeedUsers } from "@/lib/repositories/seedUsers";
 
 beforeAll(async () => {
@@ -145,9 +142,8 @@ describe("Integration: transcript ingestion auto-checks checklist", () => {
     const sessionId = result.session.id;
 
     // POST transcript containing one checklist phrase
-    const { POST } = await import(
-      "@/app/api/sessions/[sessionId]/transcript-events/route"
-    );
+    const { POST } =
+      await import("@/app/api/sessions/[sessionId]/transcript-events/route");
     const postRes = await POST(
       new Request("http://localhost/api/sessions/x/transcript-events", {
         method: "POST",
@@ -167,9 +163,7 @@ describe("Integration: transcript ingestion auto-checks checklist", () => {
     expect(postRes.status).toBe(200);
 
     // GET state and verify checklist
-    const { GET } = await import(
-      "@/app/api/sessions/[sessionId]/state/route"
-    );
+    const { GET } = await import("@/app/api/sessions/[sessionId]/state/route");
     const stateRes = await GET(
       new Request("http://localhost/api/sessions/x/state", { headers }),
       { params: Promise.resolve({ sessionId }) }
@@ -202,9 +196,7 @@ describe("Failure paths", () => {
   });
 
   it("GET state for non-existent session returns 404", async () => {
-    const { GET } = await import(
-      "@/app/api/sessions/[sessionId]/state/route"
-    );
+    const { GET } = await import("@/app/api/sessions/[sessionId]/state/route");
 
     const res = await GET(
       new Request("http://localhost/api/sessions/x/state", { headers }),
@@ -217,9 +209,8 @@ describe("Failure paths", () => {
   });
 
   it("POST transcript to non-existent session returns 404", async () => {
-    const { POST } = await import(
-      "@/app/api/sessions/[sessionId]/transcript-events/route"
-    );
+    const { POST } =
+      await import("@/app/api/sessions/[sessionId]/transcript-events/route");
 
     const res = await POST(
       new Request("http://localhost/api/sessions/x/transcript-events", {
@@ -249,9 +240,8 @@ describe("Failure paths", () => {
 
     await endSession(sessionId);
 
-    const { POST } = await import(
-      "@/app/api/sessions/[sessionId]/transcript-events/route"
-    );
+    const { POST } =
+      await import("@/app/api/sessions/[sessionId]/transcript-events/route");
 
     const res = await POST(
       new Request("http://localhost/api/sessions/x/transcript-events", {

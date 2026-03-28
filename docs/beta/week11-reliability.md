@@ -36,6 +36,7 @@ The call page polls `GET /api/sessions/[id]/state` every 2 seconds. Network or s
 **Before:** `postTranscriptEvent()` called `await fetch(...)` without checking `res.ok`. Failures were invisible.
 
 **After:** The function now checks the response status:
+
 - **409 (session ended):** Shows "Session has ended — transcript is no longer being saved." so the user knows to stop.
 - **Other errors:** Shows "Transcript save failed (status). Some audio may not be recorded." so the user is aware of data loss.
 
@@ -46,6 +47,7 @@ The call page polls `GET /api/sessions/[id]/state` every 2 seconds. Network or s
 **Before:** Database calls (Prisma operations) were unguarded. A DB failure produced an opaque Next.js 500 with a stack trace.
 
 **After:** All database-touching code blocks are wrapped in try-catch. On failure:
+
 - Logs `logger.error("db.error", { route, message })` with structured context
 - Returns `{ error: "Internal server error" }` with status 500
 - No stack trace or internal details exposed to the client
@@ -61,6 +63,7 @@ The call page polls `GET /api/sessions/[id]/state` every 2 seconds. Network or s
 **What changed:** Added a `pollFailures` counter that increments on each failed poll and resets on success.
 
 **What the user now sees:**
+
 - After 2 consecutive failures (4 seconds): Yellow banner — "Connection lost — retrying..."
 - After 5 consecutive failures (10 seconds): Red banner — "Unable to connect. Please check your connection."
 - Banner disappears immediately when polling succeeds again.
@@ -72,10 +75,12 @@ The banner uses `role="alert"` for screen reader accessibility.
 **File:** `app/demo/page.tsx`
 
 **Before:**
+
 - `ws.onerror`: "WebSocket error — check browser console" (not actionable)
 - `ws.onclose`: No message at all
 
 **After:**
+
 - `ws.onerror`: "WebSocket disconnected. Stop streaming and try again, or check your network connection."
 - `ws.onclose` (abnormal close): "Streaming connection closed unexpectedly. You may restart streaming."
 - Normal closes (code 1000, 1005) do not trigger an error message.

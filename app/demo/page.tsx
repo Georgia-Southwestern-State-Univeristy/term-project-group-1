@@ -169,9 +169,7 @@ export default function DemoPage() {
     });
     if (!res.ok) {
       if (res.status === 409) {
-        setError(
-          "Session has ended — transcript is no longer being saved."
-        );
+        setError("Session has ended — transcript is no longer being saved.");
         return;
       }
       setError(

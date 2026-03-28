@@ -35,7 +35,10 @@ const transcriptEventSchema = z.object({
     .string()
     .trim()
     .min(1, "'text' must be a non-empty string")
-    .max(MAX_EVENT_TEXT_LENGTH, `'text' exceeds ${MAX_EVENT_TEXT_LENGTH} character limit`),
+    .max(
+      MAX_EVENT_TEXT_LENGTH,
+      `'text' exceeds ${MAX_EVENT_TEXT_LENGTH} character limit`
+    ),
   isFinal: z.boolean({ error: "'isFinal' must be a boolean" }),
   occurredAt: z
     .string()
@@ -56,10 +59,7 @@ export const transcriptEventsBodySchema = z.object({
 /* ── Session creation ─────────────────────────── */
 
 export const createSessionBodySchema = z.object({
-  policyId: z
-    .string()
-    .trim()
-    .min(1, "Missing or invalid 'policyId' field"),
+  policyId: z.string().trim().min(1, "Missing or invalid 'policyId' field"),
 });
 
 /* ── Policy creation ──────────────────────────── */

@@ -12,6 +12,7 @@ All tests are in `__tests__/week11-reliability.test.ts` using the `@jest-environ
 ### Test 1: Full session lifecycle workflow (workflow test)
 
 Tests the complete create -> ingest -> end -> list-via-history workflow:
+
 - Creates a policy and session
 - Appends transcript events and verifies storage
 - Ends the session and asserts status change
@@ -20,6 +21,7 @@ Tests the complete create -> ingest -> end -> list-via-history workflow:
 ### Test 2: Session isolation (workflow test)
 
 Verifies no state leakage between concurrent sessions:
+
 - Creates two sessions (A and B) for the same policy
 - Adds different transcript text to each
 - Fetches transcripts independently and asserts each contains only its own data
@@ -27,6 +29,7 @@ Verifies no state leakage between concurrent sessions:
 ### Test 3: Transcript ingestion auto-checks checklist (integration test)
 
 Exercises the full stack through actual API route handlers:
+
 - Creates a policy with 3 checklist items
 - POSTs transcript via the `transcript-events` route handler
 - GETs state via the `state` route handler
@@ -37,6 +40,7 @@ This test covers: HTTP request -> route handler -> service -> repository (full s
 ### Test 4: Failure paths (failure-path / regression test)
 
 Three sub-tests covering error responses:
+
 - `GET .../state` with non-existent session -> 404
 - `POST .../transcript-events` with non-existent session -> 404
 - `POST .../transcript-events` on ended session -> 409
@@ -63,6 +67,7 @@ login -> start session -> live transcription -> session end -> archive -> retrie
 ## CI Configuration
 
 No changes to `.github/workflows/ci.yml` were needed. The existing pipeline runs:
+
 1. ESLint
 2. Prettier check
 3. TypeScript type check (`tsc --noEmit`)
