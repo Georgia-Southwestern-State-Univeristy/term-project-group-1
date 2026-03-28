@@ -28,6 +28,16 @@ export interface Session {
   endedAt?: string;
 }
 
+export interface SessionSummary {
+  id: string;
+  policyId: string;
+  policyName: string;
+  ownerId: string;
+  status: "active" | "ended";
+  createdAt: string;
+  endedAt?: string;
+}
+
 export interface PolicyUploadRequest {
   name: string;
   text: string;

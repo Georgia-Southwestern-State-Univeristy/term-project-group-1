@@ -1,7 +1,27 @@
 import { NextResponse } from "next/server";
-import { createSession } from "@/lib/services/sessionService";
+import {
+  createSession,
+  listSessionsForUser,
+} from "@/lib/services/sessionService";
 import { authenticateRequest, authErrorResponse } from "@/lib/auth";
 import { logger } from "@/lib/logger";
+
+export async function GET(request: Request) {
+  const authResult = await authenticateRequest(request);
+  if (!authResult.success) return authErrorResponse(authResult.error);
+  const { auth } = authResult;
+
+  const url = new URL(request.url);
+  const status = url.searchParams.get("status") ?? undefined;
+
+  const sessions = await listSessionsForUser(auth, status);
+
+  logger.info("sessions.list", {
+    data: { count: sessions.length, status: status ?? "all" },
+  });
+
+  return NextResponse.json({ sessions });
+}
 
 export async function POST(request: Request) {
   const authResult = await authenticateRequest(request);
