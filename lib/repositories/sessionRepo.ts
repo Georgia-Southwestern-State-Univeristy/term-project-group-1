@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { Session } from "@/lib/domain/types";
+import { Session, SessionSummary } from "@/lib/domain/types";
 
 export async function saveSession(session: Session): Promise<void> {
   await prisma.session.upsert({
@@ -17,6 +17,31 @@ export async function saveSession(session: Session): Promise<void> {
       endedAt: session.endedAt ? new Date(session.endedAt) : null,
     },
   });
+}
+
+export async function listSessions(filters?: {
+  ownerId?: string;
+  status?: string;
+}): Promise<SessionSummary[]> {
+  const where: Record<string, unknown> = {};
+  if (filters?.ownerId) where.ownerId = filters.ownerId;
+  if (filters?.status) where.status = filters.status;
+
+  const rows = await prisma.session.findMany({
+    where,
+    include: { policy: { select: { name: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    policyId: row.policyId,
+    policyName: row.policy.name,
+    ownerId: row.ownerId,
+    status: row.status as "active" | "ended",
+    createdAt: row.createdAt.toISOString(),
+    endedAt: row.endedAt?.toISOString(),
+  }));
 }
 
 export async function getSession(id: string): Promise<Session | undefined> {

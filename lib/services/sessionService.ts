@@ -1,6 +1,11 @@
-import { Session } from "@/lib/domain/types";
+import { Session, SessionSummary } from "@/lib/domain/types";
+import { AuthResult } from "@/lib/auth";
 import { getPolicy } from "@/lib/repositories/policyRepo";
-import { getSession, saveSession } from "@/lib/repositories/sessionRepo";
+import {
+  getSession,
+  listSessions,
+  saveSession,
+} from "@/lib/repositories/sessionRepo";
 
 type CreateSessionResult =
   | { success: true; session: Session }
@@ -25,6 +30,20 @@ export async function createSession(
 
   await saveSession(session);
   return { success: true, session };
+}
+
+export async function listSessionsForUser(
+  auth: AuthResult,
+  statusFilter?: string
+): Promise<SessionSummary[]> {
+  const filters: { ownerId?: string; status?: string } = {};
+  if (auth.role !== "supervisor") {
+    filters.ownerId = auth.userId;
+  }
+  if (statusFilter) {
+    filters.status = statusFilter;
+  }
+  return listSessions(filters);
 }
 
 type EndSessionResult =

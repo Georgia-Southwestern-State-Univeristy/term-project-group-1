@@ -35,35 +35,49 @@ export async function GET(
   const forbidden = assertOwnership(session, auth);
   if (forbidden) return forbidden;
 
-  const policy = await fetchPolicy(session.policyId);
-  const transcript = await getTranscript(sessionId);
-  const checkedIds = new Set(await getCheckedIds(sessionId));
+  try {
+    const policy = await fetchPolicy(session.policyId);
+    const transcript = await getTranscript(sessionId);
+    const checkedIds = new Set(await getCheckedIds(sessionId));
 
-  const checklistState: ChecklistStateRow[] = (policy?.checklist ?? []).map(
-    (item) => ({
-      itemId: item.id,
-      text: item.text,
-      checked: checkedIds.has(item.id),
-    })
-  );
+    const checklistState: ChecklistStateRow[] = (policy?.checklist ?? []).map(
+      (item) => ({
+        itemId: item.id,
+        text: item.text,
+        checked: checkedIds.has(item.id),
+      })
+    );
 
-  const frequencySnapshots = await getSnapshots(sessionId);
+    const frequencySnapshots = await getSnapshots(sessionId);
 
-  const threatScore = computeThreatScore(
-    frequencySnapshots,
-    policy?.checklist.length ?? 0,
-    checkedIds.size,
-    transcript.fullText ?? ""
-  );
+    const threatScore = computeThreatScore(
+      frequencySnapshots,
+      policy?.checklist.length ?? 0,
+      checkedIds.size,
+      transcript.fullText ?? ""
+    );
 
-  return NextResponse.json({
-    session,
-    transcript: {
-      entries: transcript.entries,
-      fullText: transcript.fullText,
-    },
-    checklistState,
-    frequencySnapshots,
-    threatScore,
-  });
+    return NextResponse.json({
+      session,
+      transcript: {
+        entries: transcript.entries,
+        fullText: transcript.fullText,
+      },
+      checklistState,
+      frequencySnapshots,
+      threatScore,
+    });
+  } catch (err) {
+    logger.error("db.error", {
+      sessionId,
+      data: {
+        route: "GET /api/sessions/[id]/state",
+        message: err instanceof Error ? err.message : "Unknown error",
+      },
+    });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 }

@@ -5,9 +5,10 @@ import {
 } from "@/lib/services/policyService";
 import { authenticateRequest, authErrorResponse } from "@/lib/auth";
 import { logger } from "@/lib/logger";
-
-const POLICY_NAME_MAX_LENGTH = 200;
-const POLICY_TEXT_MAX_LENGTH = 50_000;
+import {
+  createPolicyBodySchema,
+  formatZodError,
+} from "@/lib/validation/schemas";
 
 export async function POST(request: Request) {
   const authResult = await authenticateRequest(request);
@@ -26,63 +27,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { name, text } = body as Record<string, unknown>;
-
-  if (typeof name !== "string" || name.trim().length === 0) {
-    logger.error("api.error", {
-      data: { route: "POST /api/policies", status: 400, field: "name" },
-    });
-    return NextResponse.json(
-      { error: "Missing or invalid 'name' field" },
-      { status: 400 }
-    );
-  }
-
-  if (name.trim().length > POLICY_NAME_MAX_LENGTH) {
+  const parsed = createPolicyBodySchema.safeParse(body);
+  if (!parsed.success) {
+    const message = formatZodError(parsed.error.issues);
+    const field = String(parsed.error.issues[0]?.path?.[0] ?? "");
     logger.error("api.error", {
       data: {
         route: "POST /api/policies",
         status: 400,
-        field: "name",
-        reason: `Exceeds ${POLICY_NAME_MAX_LENGTH} character limit`,
+        ...(field && { field }),
+        reason: message,
       },
     });
-    return NextResponse.json(
-      {
-        error: `'name' must be at most ${POLICY_NAME_MAX_LENGTH} characters`,
-      },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  if (typeof text !== "string" || text.trim().length === 0) {
-    logger.error("api.error", {
-      data: { route: "POST /api/policies", status: 400, field: "text" },
-    });
-    return NextResponse.json(
-      { error: "Missing or invalid 'text' field" },
-      { status: 400 }
-    );
-  }
-
-  if (text.length > POLICY_TEXT_MAX_LENGTH) {
-    logger.error("api.error", {
-      data: {
-        route: "POST /api/policies",
-        status: 400,
-        field: "text",
-        reason: `Exceeds ${POLICY_TEXT_MAX_LENGTH} character limit`,
-      },
-    });
-    return NextResponse.json(
-      {
-        error: `'text' must be at most ${POLICY_TEXT_MAX_LENGTH} characters`,
-      },
-      { status: 400 }
-    );
-  }
-
-  const policy = await createPolicyFromText(name.trim(), text);
+  const policy = await createPolicyFromText(parsed.data.name, parsed.data.text);
 
   if (policy.checklist.length === 0) {
     logger.error("api.error", {
