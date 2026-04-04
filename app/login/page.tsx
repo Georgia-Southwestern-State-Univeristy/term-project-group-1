@@ -30,6 +30,7 @@ export default function LoginPage() {
       }
 
       localStorage.setItem("token", data.token);
+      document.cookie = `token=${encodeURIComponent(data.token)}; Path=/; Max-Age=${60 * 60 * 8}`;
       router.push("/demo");
     } catch {
       setError("Network error. Please try again.");

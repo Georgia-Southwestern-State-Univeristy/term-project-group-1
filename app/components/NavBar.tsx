@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -9,15 +10,14 @@ const NAV_LINKS = [
   { href: "/history", label: "History" },
 ];
 
-function hasToken(): boolean {
-  if (typeof window === "undefined") return false;
-  return !!localStorage.getItem("token");
-}
-
 export default function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
-  const loggedIn = hasToken();
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setLoggedIn(!!localStorage.getItem("token"));
+  }, [pathname]);
 
   if (pathname === "/login") return null;
 
