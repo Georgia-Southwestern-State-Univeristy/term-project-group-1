@@ -16,7 +16,7 @@
   Successfully implemented JWT-based authentication and server-side RBAC enforcement, which received positive feedback for engineering maturity.
 
 - **Testing Discipline:**  
-  The team scaled the test suite from basic unit tests to **78 automated tests** covering full-lifecycle workflows and failure paths.
+  The team scaled the test suite from basic unit tests to **82 automated tests** covering full-lifecycle workflows and failure paths.
 
 - **Signal Processing Accuracy:**  
   The Composite Threat Score successfully integrates disparate data streams (vocal frequency and text) into a single, actionable metric.
