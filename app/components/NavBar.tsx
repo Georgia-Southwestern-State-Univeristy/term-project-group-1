@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -9,21 +10,34 @@ const NAV_LINKS = [
   { href: "/history", label: "History" },
 ];
 
-function hasToken(): boolean {
-  if (typeof window === "undefined") return false;
+function subscribeToStorage(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+function getLoggedIn() {
   return !!localStorage.getItem("token");
+}
+
+function getServerLoggedIn() {
+  return false;
 }
 
 export default function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
-  const loggedIn = hasToken();
+  const loggedIn = useSyncExternalStore(
+    subscribeToStorage,
+    getLoggedIn,
+    getServerLoggedIn
+  );
 
   if (pathname === "/login") return null;
 
   function handleLogout() {
     localStorage.removeItem("token");
     document.cookie = "token=; Path=/; Max-Age=0";
+    window.dispatchEvent(new Event("storage"));
     router.push("/login");
   }
 

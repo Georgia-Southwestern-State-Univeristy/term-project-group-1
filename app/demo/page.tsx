@@ -1,8 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { FRONTEND_TURN_LIMIT } from "@/lib/config/transcription";
+
+function subscribeToStorage(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+function getToken() {
+  return localStorage.getItem("token");
+}
+
+function getServerToken() {
+  return null;
+}
 
 interface Policy {
   id: string;
@@ -62,6 +75,8 @@ export default function DemoPage() {
   const router = useRouter();
 
   // policy & session state
+  const [existingPolicies, setExistingPolicies] = useState<Policy[]>([]);
+  const [createMode, setCreateMode] = useState(false);
   const [policyName, setPolicyName] = useState("");
   const [policyText, setPolicyText] = useState("");
   const [policy, setPolicy] = useState<Policy | null>(null);
@@ -72,13 +87,29 @@ export default function DemoPage() {
   const [checklist, setChecklist] = useState<ChecklistStateRow[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("token");
-  });
+  const token = useSyncExternalStore(
+    subscribeToStorage,
+    getToken,
+    getServerToken
+  );
 
   useEffect(() => {
-    if (!token) router.push("/login");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+    fetch("/api/policies", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((r) => (r.ok ? r.json() : { policies: [] }))
+      .then((data) => {
+        const list = data.policies ?? data;
+        setExistingPolicies(Array.isArray(list) ? list : []);
+      })
+      .catch(() => setExistingPolicies([]));
   }, [token, router]);
 
   function authHeaders(): Record<string, string> {
@@ -90,7 +121,8 @@ export default function DemoPage() {
 
   function handleLogout() {
     localStorage.removeItem("token");
-    setToken(null);
+    document.cookie = "token=; Path=/; Max-Age=0";
+    window.dispatchEvent(new Event("storage"));
     router.push("/login");
   }
 
@@ -121,6 +153,28 @@ export default function DemoPage() {
       const body = await res.json().catch(() => null);
       const detail = body?.error ?? `status ${res.status}`;
       setError(`Policy creation failed: ${detail}`);
+      return;
+    }
+    const data = await res.json();
+    setPolicy(data);
+    setExistingPolicies((prev) => [data, ...prev]);
+    setCreateMode(false);
+    setSession(null);
+    setChecklist([]);
+    setTranscriptText("");
+  }
+
+  async function selectExistingPolicy(policyId: string) {
+    if (!policyId) {
+      setPolicy(null);
+      return;
+    }
+    setError(null);
+    const res = await fetch(`/api/policies/${policyId}`, {
+      headers: authHeaders(),
+    });
+    if (!res.ok) {
+      setError("Failed to load policy");
       return;
     }
     const data = await res.json();
@@ -475,35 +529,73 @@ export default function DemoPage() {
         </div>
       )}
 
-      {/* ── Create Policy ─────────────────────── */}
+      {/* ── Select or Create Policy ────────────── */}
       <section className="mb-6">
-        <h2 className="mb-2 text-lg font-semibold">1. Create Policy</h2>
-        <input
-          type="text"
-          placeholder="Policy name"
-          value={policyName}
-          onChange={(e) => setPolicyName(e.target.value)}
-          className="mb-2 block w-full rounded border p-2 text-sm"
-        />
-        <textarea
-          placeholder={
-            "One checklist item per line, e.g.:\nVerify caller identity\nConfirm account number\nRead disclosure statement"
-          }
-          value={policyText}
-          onChange={(e) => setPolicyText(e.target.value)}
-          rows={4}
-          className="mb-2 block w-full rounded border p-2 text-sm"
-        />
-        <button
-          onClick={createPolicy}
-          disabled={!policyName.trim() || !policyText.trim()}
-          className={`${btnBase} bg-blue-600 hover:bg-blue-700 disabled:opacity-50`}
-        >
-          Create Policy
-        </button>
+        <h2 className="mb-2 text-lg font-semibold">1. Policy</h2>
+
+        {!createMode && existingPolicies.length > 0 ? (
+          <>
+            <select
+              className="mb-2 block w-full rounded border p-2 text-sm"
+              value={policy?.id ?? ""}
+              onChange={(e) => selectExistingPolicy(e.target.value)}
+            >
+              <option value="">— select a policy —</option>
+              {existingPolicies.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                  {p.checklist ? ` (${p.checklist.length} items)` : ""}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => setCreateMode(true)}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              + Create new policy
+            </button>
+          </>
+        ) : (
+          <>
+            <input
+              type="text"
+              placeholder="Policy name"
+              value={policyName}
+              onChange={(e) => setPolicyName(e.target.value)}
+              className="mb-2 block w-full rounded border p-2 text-sm"
+            />
+            <textarea
+              placeholder={
+                "One checklist item per line, e.g.:\nVerify caller identity\nConfirm account number\nRead disclosure statement"
+              }
+              value={policyText}
+              onChange={(e) => setPolicyText(e.target.value)}
+              rows={4}
+              className="mb-2 block w-full rounded border p-2 text-sm"
+            />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={createPolicy}
+                disabled={!policyName.trim() || !policyText.trim()}
+                className={`${btnBase} bg-blue-600 hover:bg-blue-700 disabled:opacity-50`}
+              >
+                Create Policy
+              </button>
+              {existingPolicies.length > 0 && (
+                <button
+                  onClick={() => setCreateMode(false)}
+                  className="text-sm text-gray-500 hover:underline"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </>
+        )}
+
         {policy && (
           <p className="mt-2 text-sm text-gray-600">
-            Policy created: {policy.name} ({policy.checklist.length} items)
+            Policy: {policy.name} ({policy.checklist.length} items)
           </p>
         )}
       </section>

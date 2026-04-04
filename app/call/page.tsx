@@ -84,7 +84,7 @@ export default function CallPage() {
   useEffect(() => {
     fetch("/api/policies", { headers: authHeaders() })
       .then((r) => (r.ok ? r.json() : []))
-      .then((data) => setPolicies(data))
+      .then((data) => setPolicies(data.policies ?? data))
       .catch(() => setPolicies([]));
   }, []);
 
