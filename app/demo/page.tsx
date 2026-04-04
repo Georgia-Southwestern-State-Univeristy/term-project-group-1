@@ -1,8 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { FRONTEND_TURN_LIMIT } from "@/lib/config/transcription";
+
+function subscribeToStorage(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+function getToken() {
+  return localStorage.getItem("token");
+}
+
+function getServerToken() {
+  return null;
+}
 
 interface Policy {
   id: string;
@@ -74,19 +87,21 @@ export default function DemoPage() {
   const [checklist, setChecklist] = useState<ChecklistStateRow[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const token = useSyncExternalStore(
+    subscribeToStorage,
+    getToken,
+    getServerToken
+  );
 
   useEffect(() => {
-    const stored = localStorage.getItem("token");
-    if (!stored) {
+    if (!token) {
       router.push("/login");
       return;
     }
-    setToken(stored);
     fetch("/api/policies", {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${stored}`,
+        Authorization: `Bearer ${token}`,
       },
     })
       .then((r) => (r.ok ? r.json() : { policies: [] }))
@@ -95,7 +110,7 @@ export default function DemoPage() {
         setExistingPolicies(Array.isArray(list) ? list : []);
       })
       .catch(() => setExistingPolicies([]));
-  }, [router]);
+  }, [token, router]);
 
   function authHeaders(): Record<string, string> {
     return {
@@ -106,7 +121,8 @@ export default function DemoPage() {
 
   function handleLogout() {
     localStorage.removeItem("token");
-    setToken(null);
+    document.cookie = "token=; Path=/; Max-Age=0";
+    window.dispatchEvent(new Event("storage"));
     router.push("/login");
   }
 
