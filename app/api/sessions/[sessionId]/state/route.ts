@@ -17,6 +17,8 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
+  const start = performance.now();
+
   const authResult = await authenticateRequest(request);
   if (!authResult.success) return authErrorResponse(authResult.error);
   const { auth } = authResult;
@@ -57,6 +59,18 @@ export async function GET(
       transcript.fullText ?? ""
     );
 
+    const durationMs = Math.round(performance.now() - start);
+    logger.info("api.response", {
+      sessionId,
+      data: {
+        route: "GET /api/sessions/[id]/state",
+        status: 200,
+        durationMs,
+        transcriptEntries: transcript.entries.length,
+        frequencySnapshots: frequencySnapshots.length,
+      },
+    });
+
     return NextResponse.json({
       session,
       transcript: {
@@ -68,10 +82,12 @@ export async function GET(
       threatScore,
     });
   } catch (err) {
+    const durationMs = Math.round(performance.now() - start);
     logger.error("db.error", {
       sessionId,
       data: {
         route: "GET /api/sessions/[id]/state",
+        durationMs,
         message: err instanceof Error ? err.message : "Unknown error",
       },
     });

@@ -23,6 +23,8 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
+  const start = performance.now();
+
   const authResult = await authenticateRequest(request);
   if (!authResult.success) return authErrorResponse(authResult.error);
   const { auth } = authResult;
@@ -75,11 +77,13 @@ export async function POST(
 
     const { entries } = await getTranscript(sessionId);
 
+    const durationMs = Math.round(performance.now() - start);
     logger.info("transcript.ingest", {
       sessionId,
       data: {
         eventCount: typedEvents.length,
         totalEntries: entries.length,
+        durationMs,
         latestText,
       },
     });
