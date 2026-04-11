@@ -132,5 +132,5 @@ All 17 pre-existing tests covering the affected routes continue to pass, confirm
 
 ### Related PR
 
-- PR: TBD (this branch: `refactor/extract-request-validation-helper`)
+- PR: #57 (`refactor/extract-request-validation-helper`)
 - Teammate's PR: #56 (sprint goal / hand-off)
