@@ -27,6 +27,7 @@ After:
 ```
 
 When all variables are set:
+
 ```
   {"level":"info","event":"startup.env_check","data":{"status":"ok","message":"All required environment variables set"}}
 ```
@@ -45,6 +46,7 @@ There was no way to check whether the application is running and the database is
 
 **How it helps a future maintainer or operator:**
 Returns a JSON payload with:
+
 - **status**: `"healthy"` or `"degraded"`
 - **uptime**: server uptime in seconds
 - **database.status**: `"ok"` or `"unreachable"`, with `latencyMs` when reachable
@@ -77,7 +79,7 @@ After:
 ## Improvement 3: Request Duration Logging
 
 **What issue it addresses:**
-The existing structured logs showed *what* happened (event name, session ID, status code) but not *how long* it took. When a user reports "the dashboard feels slow," there was no way to identify which API calls are bottlenecks without adding external APM tooling. The three heaviest endpoints had no timing data at all.
+The existing structured logs showed _what_ happened (event name, session ID, status code) but not _how long_ it took. When a user reports "the dashboard feels slow," there was no way to identify which API calls are bottlenecks without adding external APM tooling. The three heaviest endpoints had no timing data at all.
 
 **Where in the system it applies:**
 Three API route handlers — chosen because they are the most performance-sensitive:
@@ -88,6 +90,7 @@ Three API route handlers — chosen because they are the most performance-sensit
 
 **How it helps a future maintainer or operator:**
 Each success and error log now includes `durationMs` — the wall-clock time from request start to response. This lets operators:
+
 - Spot slow requests by grepping logs for high `durationMs` values
 - Correlate slowness with data volume (the `/state` log also includes `transcriptEntries` and `frequencySnapshots` counts)
 - Detect degradation trends over time without external monitoring
@@ -109,6 +112,7 @@ After:
 ```
 
 **Files modified:**
+
 - `app/api/sessions/[sessionId]/state/route.ts`
 - `app/api/sessions/[sessionId]/transcript-events/route.ts`
 - `app/api/auth/login/route.ts`
@@ -117,14 +121,14 @@ After:
 
 ## Summary of Files
 
-| File | Status | Improvement |
-|------|--------|-------------|
-| `instrumentation.ts` | **Created** | Startup env validation |
-| `app/api/health/route.ts` | **Created** | Health check endpoint |
-| `app/api/sessions/[sessionId]/state/route.ts` | Modified | Request duration logging |
-| `app/api/sessions/[sessionId]/transcript-events/route.ts` | Modified | Request duration logging |
-| `app/api/auth/login/route.ts` | Modified | Request duration logging |
-| `docs/final/week13-observability.md` | **Created** | This document (Deliverable C) |
+| File                                                      | Status      | Improvement                   |
+| --------------------------------------------------------- | ----------- | ----------------------------- |
+| `instrumentation.ts`                                      | **Created** | Startup env validation        |
+| `app/api/health/route.ts`                                 | **Created** | Health check endpoint         |
+| `app/api/sessions/[sessionId]/state/route.ts`             | Modified    | Request duration logging      |
+| `app/api/sessions/[sessionId]/transcript-events/route.ts` | Modified    | Request duration logging      |
+| `app/api/auth/login/route.ts`                             | Modified    | Request duration logging      |
+| `docs/final/week13-observability.md`                      | **Created** | This document (Deliverable C) |
 
 ## Related PR
 
