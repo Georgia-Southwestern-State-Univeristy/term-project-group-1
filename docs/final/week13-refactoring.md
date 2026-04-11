@@ -86,15 +86,15 @@ Additionally, the **frequency route** did not use Zod at all. It contained a 60-
 
 ### Files Affected
 
-| File | Change |
-|------|--------|
-| `lib/validation/schemas.ts` | Added `frequencyEventSchema` Zod schema |
-| `lib/validation/parseRequestBody.ts` | **New file** — shared JSON parse + validate utility |
-| `app/api/policies/route.ts` | Replaced inline validation with `parseRequestBody` |
-| `app/api/sessions/route.ts` | Replaced inline validation with `parseRequestBody` |
-| `app/api/sessions/[sessionId]/transcript-events/route.ts` | Replaced inline validation with `parseRequestBody` |
-| `app/api/sessions/[sessionId]/frequency/route.ts` | Removed hand-rolled validator, replaced with `frequencyEventSchema` + `parseRequestBody` |
-| `app/__tests__/parse-request-body.test.ts` | **New file** — 16 tests covering the refactored code |
+| File                                                      | Change                                                                                   |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `lib/validation/schemas.ts`                               | Added `frequencyEventSchema` Zod schema                                                  |
+| `lib/validation/parseRequestBody.ts`                      | **New file** — shared JSON parse + validate utility                                      |
+| `app/api/policies/route.ts`                               | Replaced inline validation with `parseRequestBody`                                       |
+| `app/api/sessions/route.ts`                               | Replaced inline validation with `parseRequestBody`                                       |
+| `app/api/sessions/[sessionId]/transcript-events/route.ts` | Replaced inline validation with `parseRequestBody`                                       |
+| `app/api/sessions/[sessionId]/frequency/route.ts`         | Removed hand-rolled validator, replaced with `frequencyEventSchema` + `parseRequestBody` |
+| `app/__tests__/parse-request-body.test.ts`                | **New file** — 16 tests covering the refactored code                                     |
 
 ### Why the New Structure Is Better
 
@@ -109,12 +109,14 @@ Additionally, the **frequency route** did not use Zod at all. It contained a 60-
 **File:** `app/__tests__/parse-request-body.test.ts` (16 tests)
 
 **`parseRequestBody` utility tests (4):**
+
 - Returns parsed data for valid requests
 - Returns 400 for malformed JSON
 - Returns 400 with field-level error messages for schema violations
 - Returns 400 for completely wrong input shape
 
 **`frequencyEventSchema` tests (12):**
+
 - Accepts valid frequency events
 - Accepts zero for `dominantFrequencyHz` (edge case: silence)
 - Accepts empty `frequencyBins` array
