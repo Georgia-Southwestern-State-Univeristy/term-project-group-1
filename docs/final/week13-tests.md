@@ -82,5 +82,5 @@ General reliability concern: during live calls, if a session ID becomes stale (e
 
 ## CI Run
 
-- PR: TBD (this branch: `feat/week13-regression-tests`)
+- PR: #60 (`feat/week13-regression-tests`)
 - Local run: 16 suites, 92 tests, all passing
