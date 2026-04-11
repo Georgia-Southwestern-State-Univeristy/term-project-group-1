@@ -4,6 +4,7 @@ import { signToken, verifyPassword } from "@/lib/auth";
 import { logger } from "@/lib/logger";
 
 export async function POST(request: Request) {
+  const start = performance.now();
   let body: unknown;
   try {
     body = await request.json();
@@ -36,8 +37,9 @@ export async function POST(request: Request) {
 
   const token = await signToken(user);
 
+  const durationMs = Math.round(performance.now() - start);
   logger.info("auth.login", {
-    data: { userId: user.id, email: user.email },
+    data: { userId: user.id, email: user.email, durationMs },
   });
 
   const response = NextResponse.json(
