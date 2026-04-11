@@ -1,0 +1,244 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 820">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#8aa4ff"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#6fe3b5"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#d6a7ff"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#ffb86c"/>
+    </marker>
+    <filter id="glow-blue" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="#8aa4ff" flood-opacity="0.15" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-green" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="#6fe3b5" flood-opacity="0.15" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-purple" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="#d6a7ff" flood-opacity="0.15" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-orange" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="#ffb86c" flood-opacity="0.15" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="820" fill="#0f1219" rx="8"/>
+
+  <!-- Title -->
+  <text x="640" y="32" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="#ffffff" text-anchor="middle">
+    Call Co-pilot Dashboard — Current System (Week 13)
+  </text>
+
+  <!-- ==================== SYSTEM BOUNDARY ==================== -->
+  <rect x="40" y="50" width="900" height="720" rx="16" ry="16"
+        fill="none" stroke="#334155" stroke-width="1.5" stroke-dasharray="10,5"/>
+  <rect x="52" y="36" width="340" height="28" fill="#0f1219"/>
+  <text x="60" y="57" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#94a3b8" letter-spacing="0.5">
+    System: Real-time Call Co-pilot (Next.js Monolith)
+  </text>
+
+  <!-- ==================== FRONTEND TIER ==================== -->
+
+  <!-- Browser / Frontend -->
+  <g filter="url(#glow-blue)">
+    <rect x="70" y="80" width="420" height="210" rx="10" ry="10"
+          fill="#1f2a44" stroke="#8aa4ff" stroke-width="1.5"/>
+    <text x="280" y="105" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="500" fill="#8aa4ff" text-anchor="middle" letter-spacing="1">CONTAINER — BROWSER</text>
+    <text x="280" y="127" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">Web UI (Next.js App Router + React 19)</text>
+
+    <!-- Sub-components inside browser -->
+    <rect x="85" y="145" width="120" height="55" rx="6" fill="#273557" stroke="#5c7bbf" stroke-width="1"/>
+    <text x="145" y="168" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="600" fill="#c8d6f0" text-anchor="middle">/demo</text>
+    <text x="145" y="182" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#94a3b8" text-anchor="middle">Streaming + FFT</text>
+    <text x="145" y="193" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#94a3b8" text-anchor="middle">+ transcript entry</text>
+
+    <rect x="215" y="145" width="120" height="55" rx="6" fill="#273557" stroke="#5c7bbf" stroke-width="1"/>
+    <text x="275" y="168" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="600" fill="#c8d6f0" text-anchor="middle">/call</text>
+    <text x="275" y="182" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#94a3b8" text-anchor="middle">Live monitoring</text>
+    <text x="275" y="193" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#94a3b8" text-anchor="middle">polls state every 2s</text>
+
+    <rect x="345" y="145" width="130" height="55" rx="6" fill="#273557" stroke="#5c7bbf" stroke-width="1"/>
+    <text x="410" y="168" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="600" fill="#c8d6f0" text-anchor="middle">/history + /login</text>
+    <text x="410" y="182" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#94a3b8" text-anchor="middle">Session browser</text>
+    <text x="410" y="193" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#94a3b8" text-anchor="middle">+ JWT auth UI</text>
+
+    <rect x="85" y="210" width="395" height="30" rx="6" fill="#1e3050" stroke="#5c7bbf" stroke-width="1"/>
+    <text x="282" y="230" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Client-side: Web Audio API (FFT) · AudioWorklet (PCM) · localStorage (JWT)</text>
+  </g>
+
+  <!-- Audio source label -->
+  <rect x="85" y="250" width="130" height="24" rx="4" fill="#0f1219" opacity="0.85"/>
+  <text x="150" y="266" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#8aa4ff" text-anchor="middle">Microphone (getUserMedia)</text>
+
+  <!-- ==================== BACKEND API TIER ==================== -->
+
+  <g filter="url(#glow-blue)">
+    <rect x="70" y="330" width="420" height="190" rx="10" ry="10"
+          fill="#1f2a44" stroke="#8aa4ff" stroke-width="1.5"/>
+    <text x="280" y="355" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="500" fill="#8aa4ff" text-anchor="middle" letter-spacing="1">CONTAINER — SERVER</text>
+    <text x="280" y="377" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">Backend API (Next.js Route Handlers)</text>
+
+    <!-- API routes sub-components -->
+    <rect x="85" y="393" width="190" height="55" rx="6" fill="#273557" stroke="#5c7bbf" stroke-width="1"/>
+    <text x="180" y="413" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="600" fill="#c8d6f0" text-anchor="middle">API Routes</text>
+    <text x="180" y="426" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#94a3b8" text-anchor="middle">auth/login · policies · sessions</text>
+    <text x="180" y="438" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#94a3b8" text-anchor="middle">transcript-events · frequency · state</text>
+
+    <rect x="285" y="393" width="190" height="55" rx="6" fill="#273557" stroke="#5c7bbf" stroke-width="1"/>
+    <text x="380" y="413" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="600" fill="#c8d6f0" text-anchor="middle">Services + Validation</text>
+    <text x="380" y="426" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#94a3b8" text-anchor="middle">session · transcript · policy</text>
+    <text x="380" y="438" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#94a3b8" text-anchor="middle">checklist · threatScore · Zod</text>
+
+    <rect x="85" y="458" width="395" height="30" rx="6" fill="#1e3050" stroke="#5c7bbf" stroke-width="1"/>
+    <text x="282" y="478" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Cross-cutting: JWT auth (jose) · structured JSON logging · ownership guards</text>
+  </g>
+
+  <!-- ==================== DATA TIER ==================== -->
+
+  <g filter="url(#glow-green)">
+    <ellipse cx="280" cy="590" rx="160" ry="16" fill="#1a4434" stroke="#6fe3b5" stroke-width="1.5"/>
+    <rect x="120" y="590" width="320" height="80" fill="#163b2a" stroke="#6fe3b5" stroke-width="1.5"/>
+    <line x1="120" y1="590" x2="120" y2="670" stroke="#6fe3b5" stroke-width="1.5"/>
+    <line x1="440" y1="590" x2="440" y2="670" stroke="#6fe3b5" stroke-width="1.5"/>
+    <ellipse cx="280" cy="670" rx="160" ry="16" fill="#163b2a" stroke="#6fe3b5" stroke-width="1.5"/>
+    <ellipse cx="280" cy="590" rx="160" ry="16" fill="#1e4d3a" stroke="#6fe3b5" stroke-width="1.5"/>
+    <text x="280" y="618" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="500" fill="#6fe3b5" text-anchor="middle" letter-spacing="1">DATA STORE</text>
+    <text x="280" y="638" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#ffffff" text-anchor="middle">PostgreSQL (via Prisma ORM)</text>
+    <text x="280" y="658" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">users · policies · checklist_items · sessions · transcripts · frequency · checklist_state</text>
+  </g>
+
+  <!-- Repository layer label -->
+  <rect x="120" y="700" width="320" height="24" rx="6" fill="#1e3050" stroke="#5c7bbf" stroke-width="1"/>
+  <text x="280" y="716" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Repositories: sessionRepo · transcriptRepo · policyRepo · frequencyRepo · userRepo</text>
+
+  <!-- ==================== EXTERNAL: AssemblyAI ==================== -->
+
+  <g filter="url(#glow-purple)">
+    <rect x="580" y="80" width="230" height="100" rx="10" ry="10"
+          fill="#3a244a" stroke="#d6a7ff" stroke-width="1.5"/>
+    <text x="695" y="108" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="500" fill="#d6a7ff" text-anchor="middle" letter-spacing="1">EXTERNAL SYSTEM</text>
+    <text x="695" y="132" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">AssemblyAI (STT)</text>
+    <text x="695" y="152" font-family="Inter, system-ui, sans-serif" font-size="10.5" fill="#94a3b8" text-anchor="middle">Real-time streaming v3 WebSocket</text>
+    <text x="695" y="166" font-family="Inter, system-ui, sans-serif" font-size="10.5" fill="#94a3b8" text-anchor="middle">PCM 16kHz audio in / Turn objects out</text>
+  </g>
+
+  <!-- ==================== NOT YET IMPLEMENTED ==================== -->
+
+  <g filter="url(#glow-orange)">
+    <rect x="580" y="210" width="230" height="80" rx="10" ry="10"
+          fill="#3d2a14" stroke="#ffb86c" stroke-width="1.5" stroke-dasharray="6,3"/>
+    <text x="695" y="236" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="500" fill="#ffb86c" text-anchor="middle" letter-spacing="1">NOT YET INTEGRATED</text>
+    <text x="695" y="258" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffb86c" text-anchor="middle">Sentiment / Emotion API</text>
+    <text x="695" y="276" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Planned; not wired up</text>
+  </g>
+
+  <g filter="url(#glow-orange)">
+    <rect x="580" y="310" width="230" height="80" rx="10" ry="10"
+          fill="#3d2a14" stroke="#ffb86c" stroke-width="1.5" stroke-dasharray="6,3"/>
+    <text x="695" y="336" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="500" fill="#ffb86c" text-anchor="middle" letter-spacing="1">NOT YET INTEGRATED</text>
+    <text x="695" y="358" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffb86c" text-anchor="middle">LLM API</text>
+    <text x="695" y="376" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Checklist uses substring match instead</text>
+  </g>
+
+  <!-- ==================== CONNECTIONS ==================== -->
+
+  <!-- Browser → AssemblyAI (WebSocket, direct from browser) -->
+  <line x1="490" y1="140" x2="575" y2="130" stroke="#d6a7ff" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <line x1="575" y1="145" x2="490" y2="155" stroke="#d6a7ff" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <rect x="495" y="110" width="85" height="30" rx="4" fill="#0f1219" opacity="0.85"/>
+  <text x="537" y="122" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#d6a7ff" text-anchor="middle">WebSocket (wss)</text>
+  <text x="537" y="135" font-family="Inter, system-ui, sans-serif" font-size="8.5" fill="#64748b" text-anchor="middle">PCM audio / Turns</text>
+
+  <!-- Browser → Backend API (HTTPS / JSON) -->
+  <line x1="280" y1="290" x2="280" y2="325" stroke="#8aa4ff" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <line x1="260" y1="325" x2="260" y2="290" stroke="#8aa4ff" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <rect x="215" y="297" width="120" height="18" rx="4" fill="#0f1219" opacity="0.85"/>
+  <text x="275" y="310" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#8aa4ff" text-anchor="middle">HTTPS (REST + JWT auth)</text>
+
+  <!-- Backend → Backend token proxy to AssemblyAI -->
+  <path d="M 490 380 Q 540 320, 575 160" fill="none" stroke="#d6a7ff" stroke-width="1.2" marker-end="url(#arrow-purple)" stroke-dasharray="6,3"/>
+  <rect x="512" y="285" width="78" height="18" rx="4" fill="#0f1219" opacity="0.85"/>
+  <text x="551" y="298" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#d6a7ff" text-anchor="middle">token proxy (v3)</text>
+
+  <!-- Backend API → Database (Prisma) -->
+  <line x1="280" y1="520" x2="280" y2="573" stroke="#6fe3b5" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <rect x="245" y="540" width="70" height="16" rx="4" fill="#0f1219" opacity="0.85"/>
+  <text x="280" y="552" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#6fe3b5" text-anchor="middle">Prisma ORM</text>
+
+  <!-- ==================== LEGEND ==================== -->
+  <g transform="translate(960, 80)">
+    <rect x="0" y="0" width="260" height="200" rx="10" fill="#151a24" stroke="#2a3040" stroke-width="1"/>
+    <text x="15" y="24" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">LEGEND</text>
+
+    <rect x="15" y="40" width="18" height="12" rx="3" fill="#1f2a44" stroke="#8aa4ff" stroke-width="1"/>
+    <text x="40" y="51" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#8aa4ff">Application container</text>
+
+    <rect x="15" y="62" width="18" height="12" rx="3" fill="#163b2a" stroke="#6fe3b5" stroke-width="1"/>
+    <text x="40" y="73" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#6fe3b5">Data store</text>
+
+    <rect x="15" y="84" width="18" height="12" rx="3" fill="#3a244a" stroke="#d6a7ff" stroke-width="1"/>
+    <text x="40" y="95" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#d6a7ff">External system (integrated)</text>
+
+    <rect x="15" y="106" width="18" height="12" rx="3" fill="#3d2a14" stroke="#ffb86c" stroke-width="1" stroke-dasharray="4,2"/>
+    <text x="40" y="117" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#ffb86c">Planned / not yet integrated</text>
+
+    <line x1="15" y1="136" x2="33" y2="136" stroke="#8aa4ff" stroke-width="1.5"/>
+    <text x="40" y="140" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">Data flow (request/response)</text>
+
+    <line x1="15" y1="156" x2="33" y2="156" stroke="#d6a7ff" stroke-width="1.5" stroke-dasharray="6,3"/>
+    <text x="40" y="160" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">Proxy / passthrough</text>
+
+    <line x1="15" y1="176" x2="33" y2="176" stroke="#6fe3b5" stroke-width="1.5"/>
+    <text x="40" y="180" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b">Database access</text>
+  </g>
+
+  <!-- ==================== KEY NOTES ==================== -->
+  <g transform="translate(960, 310)">
+    <rect x="0" y="0" width="260" height="200" rx="10" fill="#151a24" stroke="#2a3040" stroke-width="1"/>
+    <text x="15" y="24" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">KEY DIFFERENCES FROM BETA PLAN</text>
+
+    <text x="15" y="48" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#ffb86c">1.</text>
+    <text x="27" y="48" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">No Analysis Orchestrator container</text>
+
+    <text x="15" y="68" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#ffb86c">2.</text>
+    <text x="27" y="68" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">STT WebSocket is browser-direct</text>
+
+    <text x="15" y="88" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#ffb86c">3.</text>
+    <text x="27" y="88" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">Single PostgreSQL (not two stores)</text>
+
+    <text x="15" y="108" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#ffb86c">4.</text>
+    <text x="27" y="108" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">HTTP polling (not SSE/WebSocket)</text>
+
+    <text x="15" y="128" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#ffb86c">5.</text>
+    <text x="27" y="128" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">JWT auth + RBAC added post-Beta</text>
+
+    <text x="15" y="148" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#ffb86c">6.</text>
+    <text x="27" y="148" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">Threat score is rule-based (no ML)</text>
+
+    <text x="15" y="168" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#ffb86c">7.</text>
+    <text x="27" y="168" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">Sentiment + LLM APIs not integrated</text>
+
+    <text x="15" y="188" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#ffb86c">8.</text>
+    <text x="27" y="188" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8">Structured JSON logging added</text>
+  </g>
+</svg>
