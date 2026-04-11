@@ -85,3 +85,36 @@ export const createPolicyBodySchema = z.object({
       `'text' must be at most ${POLICY_TEXT_MAX_LENGTH} characters`
     ),
 });
+
+/* ── Frequency event ─────────────────────────── */
+
+const MAX_FREQUENCY_BINS = 4096;
+
+export const frequencyEventSchema = z.object({
+  dominantFrequencyHz: z
+    .number({ error: "'dominantFrequencyHz' must be a number" })
+    .finite("'dominantFrequencyHz' must be a finite number")
+    .min(0, "'dominantFrequencyHz' must be a finite non-negative number"),
+  frequencyBins: z
+    .array(
+      z
+        .number({ error: "each frequency bin must be a number" })
+        .finite("each frequency bin must be a finite number")
+    )
+    .max(
+      MAX_FREQUENCY_BINS,
+      `'frequencyBins' exceeds maximum length of ${MAX_FREQUENCY_BINS}`
+    ),
+  sampleRateHz: z
+    .number({ error: "'sampleRateHz' must be a number" })
+    .finite("'sampleRateHz' must be a finite number")
+    .positive("'sampleRateHz' must be a positive finite number"),
+  fftSize: z
+    .number({ error: "'fftSize' must be a number" })
+    .int("'fftSize' must be a positive integer")
+    .positive("'fftSize' must be a positive integer"),
+  binResolutionHz: z
+    .number({ error: "'binResolutionHz' must be a number" })
+    .finite("'binResolutionHz' must be a finite number")
+    .positive("'binResolutionHz' must be a positive finite number"),
+});

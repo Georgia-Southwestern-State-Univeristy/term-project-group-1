@@ -14,10 +14,10 @@ import {
   assertOwnership,
 } from "@/lib/auth";
 import { logger } from "@/lib/logger";
-import {
-  transcriptEventsBodySchema,
-  formatZodError,
-} from "@/lib/validation/schemas";
+import { transcriptEventsBodySchema } from "@/lib/validation/schemas";
+import { parseRequestBody } from "@/lib/validation/parseRequestBody";
+
+const ROUTE = "POST /api/sessions/[id]/transcript-events";
 
 export async function POST(
   request: Request,
@@ -33,7 +33,7 @@ export async function POST(
   if (!session) {
     logger.error("api.error", {
       sessionId,
-      data: { route: "POST /api/sessions/[id]/transcript-events", status: 404 },
+      data: { route: ROUTE, status: 404 },
     });
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
@@ -44,11 +44,7 @@ export async function POST(
   if (session.status !== "active") {
     logger.error("api.error", {
       sessionId,
-      data: {
-        route: "POST /api/sessions/[id]/transcript-events",
-        status: 409,
-        currentStatus: session.status,
-      },
+      data: { route: ROUTE, status: 409, currentStatus: session.status },
     });
     return NextResponse.json(
       { error: "Session is not active" },
@@ -56,34 +52,13 @@ export async function POST(
     );
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    logger.error("api.error", {
-      sessionId,
-      data: {
-        route: "POST /api/sessions/[id]/transcript-events",
-        status: 400,
-        reason: "Invalid JSON body",
-      },
-    });
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = transcriptEventsBodySchema.safeParse(body);
-  if (!parsed.success) {
-    const message = formatZodError(parsed.error.issues);
-    logger.error("api.error", {
-      sessionId,
-      data: {
-        route: "POST /api/sessions/[id]/transcript-events",
-        status: 400,
-        reason: message,
-      },
-    });
-    return NextResponse.json({ error: message }, { status: 400 });
-  }
+  const parsed = await parseRequestBody(
+    request,
+    transcriptEventsBodySchema,
+    ROUTE,
+    sessionId
+  );
+  if (!parsed.success) return parsed.response;
 
   try {
     const typedEvents = parsed.data.events as TranscriptEvent[];

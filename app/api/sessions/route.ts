@@ -5,10 +5,10 @@ import {
 } from "@/lib/services/sessionService";
 import { authenticateRequest, authErrorResponse } from "@/lib/auth";
 import { logger } from "@/lib/logger";
-import {
-  createSessionBodySchema,
-  formatZodError,
-} from "@/lib/validation/schemas";
+import { createSessionBodySchema } from "@/lib/validation/schemas";
+import { parseRequestBody } from "@/lib/validation/parseRequestBody";
+
+const POST_ROUTE = "POST /api/sessions";
 
 export async function GET(request: Request) {
   const authResult = await authenticateRequest(request);
@@ -45,28 +45,12 @@ export async function POST(request: Request) {
   if (!authResult.success) return authErrorResponse(authResult.error);
   const { auth } = authResult;
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    logger.error("api.error", {
-      data: {
-        route: "POST /api/sessions",
-        status: 400,
-        reason: "Invalid JSON body",
-      },
-    });
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = createSessionBodySchema.safeParse(body);
-  if (!parsed.success) {
-    const message = formatZodError(parsed.error.issues);
-    logger.error("api.error", {
-      data: { route: "POST /api/sessions", status: 400, field: "policyId" },
-    });
-    return NextResponse.json({ error: message }, { status: 400 });
-  }
+  const parsed = await parseRequestBody(
+    request,
+    createSessionBodySchema,
+    POST_ROUTE
+  );
+  if (!parsed.success) return parsed.response;
 
   try {
     const result = await createSession(parsed.data.policyId, auth.userId);

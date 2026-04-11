@@ -5,42 +5,17 @@ import {
 } from "@/lib/services/policyService";
 import { authenticateRequest, authErrorResponse } from "@/lib/auth";
 import { logger } from "@/lib/logger";
-import {
-  createPolicyBodySchema,
-  formatZodError,
-} from "@/lib/validation/schemas";
+import { createPolicyBodySchema } from "@/lib/validation/schemas";
+import { parseRequestBody } from "@/lib/validation/parseRequestBody";
+
+const ROUTE = "POST /api/policies";
 
 export async function POST(request: Request) {
   const authResult = await authenticateRequest(request);
   if (!authResult.success) return authErrorResponse(authResult.error);
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    logger.error("api.error", {
-      data: {
-        route: "POST /api/policies",
-        status: 400,
-        reason: "Invalid JSON body",
-      },
-    });
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
 
-  const parsed = createPolicyBodySchema.safeParse(body);
-  if (!parsed.success) {
-    const message = formatZodError(parsed.error.issues);
-    const field = String(parsed.error.issues[0]?.path?.[0] ?? "");
-    logger.error("api.error", {
-      data: {
-        route: "POST /api/policies",
-        status: 400,
-        ...(field && { field }),
-        reason: message,
-      },
-    });
-    return NextResponse.json({ error: message }, { status: 400 });
-  }
+  const parsed = await parseRequestBody(request, createPolicyBodySchema, ROUTE);
+  if (!parsed.success) return parsed.response;
 
   const policy = await createPolicyFromText(parsed.data.name, parsed.data.text);
 
