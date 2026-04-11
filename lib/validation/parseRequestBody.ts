@@ -41,9 +41,10 @@ export async function parseRequestBody<T extends z.ZodType>(
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     const message = formatZodError(parsed.error.issues);
+    const field = String(parsed.error.issues[0]?.path?.[0] ?? "");
     logger.error("api.error", {
       ...(sessionId && { sessionId }),
-      data: { route, status: 400, reason: message },
+      data: { route, status: 400, ...(field && { field }), reason: message },
     });
     return {
       success: false,
