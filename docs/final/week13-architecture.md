@@ -40,66 +40,66 @@ PostgreSQL (via Prisma ORM)
 
 ### Frontend (Browser)
 
-| Component | File | Responsibility |
-|-----------|------|----------------|
-| **Demo page** | `app/demo/page.tsx` | Full-featured workbench: policy CRUD, session management, real-time AssemblyAI WebSocket streaming, FFT frequency capture (Web Audio API), transcript buffering, and checklist display |
-| **Call page** | `app/call/page.tsx` | Simplified monitoring UI: policy selector, session creation, polls `/state` endpoint every 2s, displays transcript + checklist + threat score |
-| **History page** | `app/history/page.tsx` | Browse ended sessions with expandable detail (transcript, checklist, threat score) |
-| **Login page** | `app/login/page.tsx` | Email/password form, stores JWT in both localStorage and HttpOnly cookie |
-| **NavBar** | `app/components/NavBar.tsx` | Navigation links, auth-aware (login/logout), hidden on `/login` route |
+| Component        | File                        | Responsibility                                                                                                                                                                         |
+| ---------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Demo page**    | `app/demo/page.tsx`         | Full-featured workbench: policy CRUD, session management, real-time AssemblyAI WebSocket streaming, FFT frequency capture (Web Audio API), transcript buffering, and checklist display |
+| **Call page**    | `app/call/page.tsx`         | Simplified monitoring UI: policy selector, session creation, polls `/state` endpoint every 2s, displays transcript + checklist + threat score                                          |
+| **History page** | `app/history/page.tsx`      | Browse ended sessions with expandable detail (transcript, checklist, threat score)                                                                                                     |
+| **Login page**   | `app/login/page.tsx`        | Email/password form, stores JWT in both localStorage and HttpOnly cookie                                                                                                               |
+| **NavBar**       | `app/components/NavBar.tsx` | Navigation links, auth-aware (login/logout), hidden on `/login` route                                                                                                                  |
 
 ### Backend API (Next.js Route Handlers)
 
-| Endpoint | Responsibility |
-|----------|----------------|
-| `POST /api/auth/login` | Validates credentials (SHA256 hash), signs JWT (HS256, 8h expiry), sets HttpOnly cookie |
-| `POST/GET /api/policies` | Create policy from text (splits newlines into checklist items), list all policies |
-| `GET /api/policies/[id]` | Fetch single policy with ordered checklist |
-| `POST/GET /api/sessions` | Create session (owned by authenticated user), list sessions (agent sees own, supervisor sees all) |
-| `GET /api/sessions/[id]/state` | Aggregated state: session metadata + transcript + checklist + frequency snapshots + threat score (computed on-the-fly) |
-| `POST /api/sessions/[id]/end` | End session (idempotent) |
-| `POST /api/sessions/[id]/transcript-events` | Ingest transcript events, auto-check matching checklist items, enforce transcript windowing (50k char limit) |
-| `POST/GET /api/sessions/[id]/frequency` | Store/retrieve frequency snapshots (FFT bins) |
-| `POST /api/assemblyai/token` | Proxy request to AssemblyAI v3 token endpoint, returns temporary 60s streaming token |
+| Endpoint                                    | Responsibility                                                                                                         |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/auth/login`                      | Validates credentials (SHA256 hash), signs JWT (HS256, 8h expiry), sets HttpOnly cookie                                |
+| `POST/GET /api/policies`                    | Create policy from text (splits newlines into checklist items), list all policies                                      |
+| `GET /api/policies/[id]`                    | Fetch single policy with ordered checklist                                                                             |
+| `POST/GET /api/sessions`                    | Create session (owned by authenticated user), list sessions (agent sees own, supervisor sees all)                      |
+| `GET /api/sessions/[id]/state`              | Aggregated state: session metadata + transcript + checklist + frequency snapshots + threat score (computed on-the-fly) |
+| `POST /api/sessions/[id]/end`               | End session (idempotent)                                                                                               |
+| `POST /api/sessions/[id]/transcript-events` | Ingest transcript events, auto-check matching checklist items, enforce transcript windowing (50k char limit)           |
+| `POST/GET /api/sessions/[id]/frequency`     | Store/retrieve frequency snapshots (FFT bins)                                                                          |
+| `POST /api/assemblyai/token`                | Proxy request to AssemblyAI v3 token endpoint, returns temporary 60s streaming token                                   |
 
 ### Services Layer
 
-| Service | File | Responsibility |
-|---------|------|----------------|
-| **sessionService** | `lib/services/sessionService.ts` | Create session (validates policy exists), list filtered by role, end session |
-| **transcriptService** | `lib/services/transcriptService.ts` | Append transcript events, prune if over 50k char window (keeps newest), get full transcript |
-| **policyService** | `lib/services/policyService.ts` | Create policy from text (split lines into checklist), fetch, list |
-| **checklistService** | `lib/services/checklistService.ts` | Auto-check checklist items via normalized case-insensitive substring match |
+| Service                | File                                 | Responsibility                                                                                         |
+| ---------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| **sessionService**     | `lib/services/sessionService.ts`     | Create session (validates policy exists), list filtered by role, end session                           |
+| **transcriptService**  | `lib/services/transcriptService.ts`  | Append transcript events, prune if over 50k char window (keeps newest), get full transcript            |
+| **policyService**      | `lib/services/policyService.ts`      | Create policy from text (split lines into checklist), fetch, list                                      |
+| **checklistService**   | `lib/services/checklistService.ts`   | Auto-check checklist items via normalized case-insensitive substring match                             |
 | **threatScoreService** | `lib/services/threatScoreService.ts` | Compute composite threat score from frequency stress (35%), compliance gap (35%), keyword threat (30%) |
 
 ### Data Layer
 
-| Repository | File | What it accesses |
-|------------|------|------------------|
-| **sessionRepo** | `lib/repositories/sessionRepo.ts` | `Session` table — save, get, list, update status |
-| **transcriptRepo** | `lib/repositories/transcriptRepo.ts` | `TranscriptEntry` table — append, get, prune by count |
-| **policyRepo** | `lib/repositories/policyRepo.ts` | `Policy` + `ChecklistItem` tables — save, get, list |
-| **frequencyRepo** | `lib/repositories/frequencyRepo.ts` | `FrequencySnapshot` table — append, get by session |
+| Repository             | File                                     | What it accesses                                       |
+| ---------------------- | ---------------------------------------- | ------------------------------------------------------ |
+| **sessionRepo**        | `lib/repositories/sessionRepo.ts`        | `Session` table — save, get, list, update status       |
+| **transcriptRepo**     | `lib/repositories/transcriptRepo.ts`     | `TranscriptEntry` table — append, get, prune by count  |
+| **policyRepo**         | `lib/repositories/policyRepo.ts`         | `Policy` + `ChecklistItem` tables — save, get, list    |
+| **frequencyRepo**      | `lib/repositories/frequencyRepo.ts`      | `FrequencySnapshot` table — append, get by session     |
 | **checklistStateRepo** | `lib/repositories/checklistStateRepo.ts` | `ChecklistState` table — mark checked, get checked IDs |
-| **userRepo** | `lib/repositories/userRepo.ts` | `User` table — save, get by ID or email |
+| **userRepo**           | `lib/repositories/userRepo.ts`           | `User` table — save, get by ID or email                |
 
 ### Cross-Cutting Concerns
 
-| Concern | File | Implementation |
-|---------|------|----------------|
-| **Authentication** | `lib/auth.ts` | JWT (HS256 via `jose`), dual delivery (cookie + header), role extraction |
-| **Authorization** | `lib/auth.ts` | `assertOwnership()` — agents can only access their own sessions; supervisors bypass |
-| **Validation** | `lib/validation/schemas.ts` | Zod schemas for all POST body payloads |
-| **Logging** | `lib/logger.ts` | Structured JSON to stdout/stderr (`{ timestamp, level, event, sessionId?, data? }`) |
-| **Database** | `lib/db.ts` | Prisma singleton with `globalThis` caching for dev-mode HMR stability |
+| Concern            | File                        | Implementation                                                                      |
+| ------------------ | --------------------------- | ----------------------------------------------------------------------------------- |
+| **Authentication** | `lib/auth.ts`               | JWT (HS256 via `jose`), dual delivery (cookie + header), role extraction            |
+| **Authorization**  | `lib/auth.ts`               | `assertOwnership()` — agents can only access their own sessions; supervisors bypass |
+| **Validation**     | `lib/validation/schemas.ts` | Zod schemas for all POST body payloads                                              |
+| **Logging**        | `lib/logger.ts`             | Structured JSON to stdout/stderr (`{ timestamp, level, event, sessionId?, data? }`) |
+| **Database**       | `lib/db.ts`                 | Prisma singleton with `globalThis` caching for dev-mode HMR stability               |
 
 ### External Integrations
 
-| System | Integration Point | Status |
-|--------|--------------------|--------|
-| **AssemblyAI** (Speech-to-Text) | Browser → WebSocket (wss://streaming.assemblyai.com/v3/ws); Backend proxies token only | **Integrated** |
-| **Sentiment/Emotion API** | — | **Not integrated** (planned) |
-| **LLM API** | — | **Not integrated** — checklist uses substring matching instead |
+| System                          | Integration Point                                                                      | Status                                                         |
+| ------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **AssemblyAI** (Speech-to-Text) | Browser → WebSocket (wss://streaming.assemblyai.com/v3/ws); Backend proxies token only | **Integrated**                                                 |
+| **Sentiment/Emotion API**       | —                                                                                      | **Not integrated** (planned)                                   |
+| **LLM API**                     | —                                                                                      | **Not integrated** — checklist uses substring matching instead |
 
 ---
 
@@ -185,12 +185,13 @@ The Week 4 architecture review (`docs/architecture/week4-architecture-review.md`
 
 ## Files Created/Modified
 
-| File | Status |
-|------|--------|
+| File                                           | Status                                                           |
+| ---------------------------------------------- | ---------------------------------------------------------------- |
 | `docs/architecture/current-system-diagram.svg` | **Created** — updated container diagram reflecting actual system |
-| `docs/final/week13-architecture.md` | **Created** — this document (Deliverable E) |
+| `docs/final/week13-architecture.md`            | **Created** — this document (Deliverable E)                      |
 
 Previous architecture artifacts are preserved unchanged:
+
 - `docs/architecture/architecture-first-pass.svg` — Week 3 first-pass diagram
 - `docs/architecture/first-pass-architecture.md` — Week 3 overview
 - `docs/architecture/container-diagram.svg` — Week 4 container diagram
