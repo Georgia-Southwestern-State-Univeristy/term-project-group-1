@@ -1,7 +1,7 @@
-# Beta Deployment Guide
+# Sentinel Deployment & Setup Guide
 
 **Team:** Group 1 (Jaxon Doolittle, Ivan Herndon)
-**Date:** April 3, 2026
+**Date:** April 17, 2026
 
 ---
 
@@ -64,10 +64,10 @@ If PostgreSQL is already installed:
 # Create the database
 createdb call_copilot
 
-# Push the Prisma schema to the database
-npx prisma db push
+# Apply schema migrations and generate Prisma client
+npx prisma migrate dev
 
-# Seed demo users (agent + supervisor accounts)
+# Seed demo accounts (agent@sentinel.local / supervisor@sentinel.local)
 npx prisma db seed
 ```
 
@@ -164,14 +164,7 @@ Navigate to `http://localhost:3000/demo`:
 5. Checklist items auto-check as matching phrases are detected
 6. Click **Stop** to end the session
 
-> **Note:** The `/demo` page is the primary workflow for the beta. It handles
-> the full pipeline: policy creation, session management, live audio capture
-> via AssemblyAI WebSocket, and auto-checklist matching.
->
-> The `/call` page is a session monitoring dashboard that displays transcript,
-> checklist, and threat score state. It does not yet include audio capture —
-> integrating the streaming pipeline into `/call` is planned for the final
-> release.
+> **Note:** The /call page is a real-time monitoring dashboard that polls /api/sessions/[id]/state every 2 seconds. While transcription can be viewed here, the active microphone capture currently resides on the /demo workbench.
 
 ### Step 4: View History
 
@@ -188,7 +181,7 @@ Navigate to `http://localhost:3000/history`:
 npm run format:check   # Prettier formatting
 npm run lint           # ESLint
 npx tsc --noEmit       # TypeScript type check
-npm test               # Jest (82 tests)
+npm test               # Jest (92 tests)
 npm run build          # Next.js production build
 ```
 
