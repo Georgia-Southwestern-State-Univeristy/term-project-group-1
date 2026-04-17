@@ -6,6 +6,7 @@ analysis, and threat scoring. Graduate Software Engineering project at Georgia
 Southwestern State University.
 
 ## 🏁 Reviewer Start Path
+
 For the most accurate assessment of the Sentinel Release Candidate (v0.9), please follow this sequence:
 
 1.  **[Release Candidate Summary](docs/releases/release-candidate.md):** Overview of stable workflows and major differences from the Beta phase.
@@ -36,25 +37,33 @@ For the most accurate assessment of the Sentinel Release Candidate (v0.9), pleas
 ## Quick Start
 
 # 1. Clone and Install
+
 ```bash
 git clone https://github.com/Georgia-Southwestern-State-Univeristy/term-project-group-1.git
 cd term-project-group-1
 npm install
 ```
+
 # 2. Configure Environment (Mandatory)
+
 ```bash
-cp .env.example .env.local   
+cp .env.example .env.local
 # Open .env.local and provide your DATABASE_URL and ASSEMBLYAI_API_KEY
 ```
+
 # 3. Initialize Database
+
 ```bash
 npx prisma migrate dev       # Applies PostgreSQL schema
 npx prisma db seed           # Seeds demo users (agent@sentinel.local / agent123)
 ```
+
 # 4. Launch
+
 ```bash
 npm run dev                  # start dev server → http://localhost:3000
 ```
+
 For detailed setup including PostgreSQL installation, Docker option, and
 step-by-step first-run walkthrough, see the
 **[Deployment Guide](docs/deployment/beta-deploy.md)**.
@@ -136,24 +145,28 @@ public/
 ## 🏁 Release Candidate Status (v0.2)
 
 ### What is Stable
+
 - **Persistent Data Layer:** Full PostgreSQL integration for all sessions and policies.
 - **Hardened Validation:** Unified Zod schemas via `parseRequestBody()` utility.
 - **System Observability:** `/api/health` diagnostics and structured duration logging.
 - **Regression Suite:** 90+ automated tests protecting core workflows.
 
 ### Remaining Risks (Targeted for v1.0)
+
 - **Firefox Compatibility:** Primary audio capture currently restricted to Chromium engines.
 - **Auth Hardening:** Server-side token revocation (deny-listing) upon logout.
 - **Component Decomposition:** Refactoring the monolithic `/call` page to reduce component size.
+
 ## Documentation
 
-| Document                                                     | Description                                 |
-| ------------------------------------------------------------ | ------------------------------------------- |
-| [User Guide](docs/user-guide.md)                             | Step-by-step Agent/Supervisor walkthrough   |
-| [Admin & Maintenance](docs/admin-guide.md)                   | Reseeding, diagnostics, and recovery        |
-| [Architecture Snapshot](docs/final/week13-architecture.md)   | **Current** system diagram and responsibilities |
-| [Final Triage](docs/final/week14-triage.md)                  | Ranked list of 8+ remaining release risks   |
-| [Hand-Off Draft](docs/handoff/hand-off-draft.md)             | Maintenance plan for future teams           |
+| Document                                                   | Description                                     |
+| ---------------------------------------------------------- | ----------------------------------------------- |
+| [User Guide](docs/user-guide.md)                           | Step-by-step Agent/Supervisor walkthrough       |
+| [Admin & Maintenance](docs/admin-guide.md)                 | Reseeding, diagnostics, and recovery            |
+| [Architecture Snapshot](docs/final/week13-architecture.md) | **Current** system diagram and responsibilities |
+| [Final Triage](docs/final/week14-triage.md)                | Ranked list of 8+ remaining release risks       |
+| [Hand-Off Draft](docs/handoff/hand-off-draft.md)           | Maintenance plan for future teams               |
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for branching, PR, and code standards.

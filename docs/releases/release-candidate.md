@@ -2,7 +2,7 @@
 
 **RC Tag:** rc-v0.2  
 **Date:** April 17, 2026  
-**Project Board Link:** Sentinel Week 14 Release Board  https://github.com/orgs/Georgia-Southwestern-State-Univeristy/projects/27/views/3
+**Project Board Link:** Sentinel Week 14 Release Board https://github.com/orgs/Georgia-Southwestern-State-Univeristy/projects/27/views/3
 
 ---
 
@@ -10,10 +10,10 @@
 
 The following workflows are considered feature-complete and verified by 90+ automated tests:
 
-- **Secure Multi-Role Access:** Authentication via JWT with enforced RBAC for Agents and Supervisors.  
-- **Live Assisted Transcription:** Real-time speech-to-text via AssemblyAI with character-based windowing for memory safety.  
-- **Composite Threat Scoring:** Dynamic risk calculation using the weighted $35/35/30$ formula (vocal stress, checklist, and keywords).  
-- **Historical Audit & Retrieval:** Permanent session archiving in PostgreSQL with role-based retrieval via the `/history` dashboard.  
+- **Secure Multi-Role Access:** Authentication via JWT with enforced RBAC for Agents and Supervisors.
+- **Live Assisted Transcription:** Real-time speech-to-text via AssemblyAI with character-based windowing for memory safety.
+- **Composite Threat Scoring:** Dynamic risk calculation using the weighted $35/35/30$ formula (vocal stress, checklist, and keywords).
+- **Historical Audit & Retrieval:** Permanent session archiving in PostgreSQL with role-based retrieval via the `/history` dashboard.
 
 ---
 
@@ -50,11 +50,11 @@ The following workflows are considered feature-complete and verified by 90+ auto
 
 To reach the v1.0 production release, the team must complete the following with specific acceptance criteria:
 
-| Task                  | Acceptance Criteria                                                                 |
-|-----------------------|--------------------------------------------------------------------------------------|
-| Firefox Fallback      | Implement a MediaRecorder fallback that allows Firefox to stream audio with < 500ms latency |
-| WebSocket Reconnect   | Add a heartbeat listener that auto-restores the transcription stream within 3 seconds of a network blip |
-| Component Refactor    | Extract the "Stress Graph" and "Transcript Feed" into isolated components to reduce `/call` page size by 40% |
-| Token Revocation      | Implement a deny list in Redis or PostgreSQL to track and invalidate revoked tokens upon logout |
+| Task                | Acceptance Criteria                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Firefox Fallback    | Implement a MediaRecorder fallback that allows Firefox to stream audio with < 500ms latency                  |
+| WebSocket Reconnect | Add a heartbeat listener that auto-restores the transcription stream within 3 seconds of a network blip      |
+| Component Refactor  | Extract the "Stress Graph" and "Transcript Feed" into isolated components to reduce `/call` page size by 40% |
+| Token Revocation    | Implement a deny list in Redis or PostgreSQL to track and invalidate revoked tokens upon logout              |
 
 ---

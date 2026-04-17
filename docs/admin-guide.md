@@ -38,11 +38,11 @@ npx prisma migrate dev
 
 ### Configuration Notes
 
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | PostgreSQL connection string (e.g., `postgresql://...`) |
-| `ASSEMBLYAI_API_KEY` | Your master key from the AssemblyAI dashboard |
-| `JWT_SECRET` | Secret string for session signing. Logs a warning if empty |
+| Variable             | Description                                                |
+| -------------------- | ---------------------------------------------------------- |
+| `DATABASE_URL`       | PostgreSQL connection string (e.g., `postgresql://...`)    |
+| `ASSEMBLYAI_API_KEY` | Your master key from the AssemblyAI dashboard              |
+| `JWT_SECRET`         | Secret string for session signing. Logs a warning if empty |
 
 ---
 
@@ -79,6 +79,6 @@ The system automatically detects port conflicts (3000–3003) and binds to the f
 **Server Logs**  
 Structured JSON logs are emitted to stdout. Key fields:
 
-- `startup.env_check` → Missing config at boot  
-- `durationMs` → API performance timing  
+- `startup.env_check` → Missing config at boot
+- `durationMs` → API performance timing
 - `api.response` → Status codes (e.g., `503` if database is unreachable)

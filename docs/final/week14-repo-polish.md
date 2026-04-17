@@ -6,12 +6,12 @@
 
 We have performed a top-to-bottom audit to ensure the "Technical Story" is consistent across all entry points.
 
-| Document | Alignment Action Taken |
-|----------|------------------------|
-| README.md | Removed all "in-memory" references; synchronized setup with PostgreSQL/Prisma; added Reviewer Start Path. |
-| Deploy Guide | Renamed to `deploy.md`; updated setup to use `prisma migrate dev`; synced test count to 92. |
-| Architecture | Finalized Week 13 Snapshot as the "Current Truth," documenting the pivot away from a separate Analysis Orchestrator. |
-| Hand-Off Draft | Synchronized "Known Weaknesses" with the Week 14 Triage list to include auth hardening and component bloat. |
+| Document       | Alignment Action Taken                                                                                               |
+| -------------- | -------------------------------------------------------------------------------------------------------------------- |
+| README.md      | Removed all "in-memory" references; synchronized setup with PostgreSQL/Prisma; added Reviewer Start Path.            |
+| Deploy Guide   | Renamed to `deploy.md`; updated setup to use `prisma migrate dev`; synced test count to 92.                          |
+| Architecture   | Finalized Week 13 Snapshot as the "Current Truth," documenting the pivot away from a separate Analysis Orchestrator. |
+| Hand-Off Draft | Synchronized "Known Weaknesses" with the Week 14 Triage list to include auth hardening and component bloat.          |
 
 ---
 

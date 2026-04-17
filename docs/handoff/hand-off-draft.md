@@ -41,6 +41,7 @@ App will automatically use an available port between **3000–3003**.
 ---
 
 ## 4. Known Weaknesses & Technical Debt
+
 - **Browser Lock-in:** Audio capture is currently restricted to Chromium-based engines (Chrome/Edge) due to specific `AudioWorklet` implementation.
 - **Auth Hardening:** Server-side token revocation (deny-listing) is currently deferred; logouts clear client-side state but do not invalidate the JWT server-side.
 - **Dashboard Bloat:** The `/call` page is a monolithic component (392 lines) that requires decomposition into sub-modules for improved testability.

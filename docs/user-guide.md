@@ -4,16 +4,16 @@
 
 ### Who is this for?
 
-- **Agents:** Front-line representatives who conduct live calls and require real-time protocol assistance.  
-- **Supervisors:** Management personnel responsible for reviewing call quality, compliance adherence, and threat trends.  
+- **Agents:** Front-line representatives who conduct live calls and require real-time protocol assistance.
+- **Supervisors:** Management personnel responsible for reviewing call quality, compliance adherence, and threat trends.
 
 ---
 
 ### Main Tasks
 
-- **Conduct Assisted Calls:** Monitor live transcription and real-time threat scores.  
-- **Verify Compliance:** Track progress against a dynamic checklist tied to specific security policies.  
-- **Historical Auditing:** Review archived transcripts and final composite threat scores for ended sessions.  
+- **Conduct Assisted Calls:** Monitor live transcription and real-time threat scores.
+- **Verify Compliance:** Track progress against a dynamic checklist tied to specific security policies.
+- **Historical Auditing:** Review archived transcripts and final composite threat scores for ended sessions.
 
 ---
 
@@ -27,10 +27,9 @@
 
 3. **Engage:**  
    Click **"Start Call"** to begin real-time transcription. As you speak, the Composite Threat Score will fluctuate based on:
-
-   - **Vocal Stress (35%):** Detected frequency anomalies in your audio.  
-   - **Compliance (35%):** Items checked off your protocol list.  
-   - **Keywords (30%):** High-risk terms identified in the transcript.  
+   - **Vocal Stress (35%):** Detected frequency anomalies in your audio.
+   - **Compliance (35%):** Items checked off your protocol list.
+   - **Keywords (30%):** High-risk terms identified in the transcript.
 
 4. **Conclude:**  
    Click **"End Session"** to stop the stream. The system will automatically archive the data to the persistent database.
@@ -43,7 +42,7 @@
 ### Known Limitations & Constraints
 
 - **Browser Support:**  
-  Only Chromium-based browsers (Chrome, Edge) currently support live audio capture.  
+  Only Chromium-based browsers (Chrome, Edge) currently support live audio capture.
 
 - **Connectivity:**  
-  If the **"Connection Lost"** banner appears, manual session restart is required as auto-reconnection is not yet active.  
+  If the **"Connection Lost"** banner appears, manual session restart is required as auto-reconnection is not yet active.
