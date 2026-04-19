@@ -1,42 +1,200 @@
 openapi: 3.0.3
 info:
   title: Sentinel Dashboard API
-  version: 0.1.0
+  version: 0.2.0
   description: >
-    Week 6 MVP contract focused on Story #1:
-    Admin uploads a compliance policy text file and the system generates a checklist.
+    HTTP API for the Sentinel Call Co-pilot Dashboard. The API is served by
+    Next.js App Router route handlers under `/api/*`. It exposes
+    authentication, policy management, session lifecycle, transcript and
+    frequency ingestion, history retrieval, and operational health.
+
+
+    ## Conventions
+
+
+    - All request and response bodies are JSON (`application/json`).
+
+    - Error responses use the shape `{ "error": string }` and an
+      appropriate HTTP status code.
+
+    - All protected routes accept the JWT either via
+      `Authorization: Bearer <token>` or the `token` cookie set by
+      `POST /api/auth/login`. Either works; tests and the UI use the
+      cookie, curl examples use the header.
+
+    - Timestamps are ISO-8601 UTC strings.
+
+    - IDs are UUIDs.
+
+
+    ## Authentication
+
+
+    Tokens are HS256 JWTs issued by `POST /api/auth/login`, signed with the
+    server's `JWT_SECRET` (a dev default is used if unset — see the
+    deployment runbook). Tokens encode `sub` (user id), `email`, and `role`
+    and expire **8 hours** after issue. Role is either `agent` or
+    `supervisor`.
+
+
+    ## Ownership rules for session routes
+
+
+    All `/api/sessions/{sessionId}/...` routes enforce ownership: agents
+    may only access sessions they own (`session.ownerId === auth.userId`).
+    Supervisors bypass ownership and can read any session. A mismatch
+    returns **403 Forbidden**. See `lib/auth.ts:assertOwnership`.
 
 servers:
-  - url: http://localhost:3000/api
+  - url: http://localhost:3000
+    description: Local development server (port may fall through 3000–3003)
 
 tags:
+  - name: Auth
+    description: Login and token issuance
+  - name: Health
+    description: Operational diagnostics (unauthenticated)
   - name: Policies
-    description: Policy upload and checklist generation
+    description: Compliance policies and auto-generated checklists
   - name: Sessions
-    description: Monitoring sessions (ties future work to a policy)
+    description: Call session lifecycle and history
+  - name: Transcript
+    description: Transcript ingestion and auto-checklist updates
+  - name: Frequency
+    description: Vocal-stress frequency snapshots feeding the threat score
+  - name: Transcription
+    description: Third-party streaming STT token mint
+
+security:
+  - bearerAuth: []
+  - cookieAuth: []
 
 paths:
-  /policies:
+  /api/auth/login:
     post:
-      tags: [Policies]
-      summary: Upload a compliance policy text file
+      tags: [Auth]
+      summary: Exchange email + password for a JWT
       description: >
-        Accepts a plain-text policy payload and returns a generated checklist.
-        MVP parsing rule: one checklist item per non-empty line.
+        Authenticates an agent or supervisor and returns a JWT. On success
+        the token is **also** returned as an `HttpOnly` cookie named
+        `token` with `Path=/` and `SameSite=Strict`, so browsers don't need
+        to read the response body to stay logged in.
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PolicyUploadRequest"
+              $ref: "#/components/schemas/LoginRequest"
+            examples:
+              agent:
+                summary: Seeded agent
+                value:
+                  email: agent@sentinel.local
+                  password: agent123
+      responses:
+        "200":
+          description: Authentication successful
+          headers:
+            Set-Cookie:
+              description: >
+                `token=<jwt>; HttpOnly; Path=/; SameSite=Strict`
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+              examples:
+                ok:
+                  value:
+                    token: eyJhbGciOiJIUzI1NiJ9...
+                    user:
+                      id: seed-agent-001
+                      email: agent@sentinel.local
+                      role: agent
+                      name: Demo Agent
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalid:
+                  value:
+                    error: Invalid credentials
+
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Service health check (unauthenticated)
+      description: >
+        Probes uptime, database connectivity (round-trip `SELECT 1`), and
+        the presence of required environment variables. Intended for load
+        balancers, container orchestrators, and operators.
+      security: []
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              examples:
+                healthy:
+                  value:
+                    status: healthy
+                    uptime: 13
+                    database:
+                      status: ok
+                      latencyMs: 33
+                    env:
+                      JWT_SECRET: default (insecure)
+                      ASSEMBLYAI_API_KEY: set
+                      DATABASE_URL: set
+        "503":
+          description: Service degraded — database unreachable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              examples:
+                degraded:
+                  value:
+                    status: degraded
+                    uptime: 3
+                    database:
+                      status: unreachable
+                    env:
+                      JWT_SECRET: set
+                      ASSEMBLYAI_API_KEY: set
+                      DATABASE_URL: set
+
+  /api/policies:
+    post:
+      tags: [Policies]
+      summary: Create a policy and auto-generate its checklist
+      description: >
+        Accepts a policy name and free-text body. The checklist is derived
+        from the text by splitting on non-empty lines; the resulting
+        policy is rejected with **400** if the text produces zero items.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePolicyRequest"
             examples:
               example:
                 value:
-                  name: "Security Verification Protocol"
+                  name: HIPAA Basic
                   text: |
-                    Thank you for calling
                     Verify caller identity
-                    Confirm mailing address
+                    Confirm date of birth
+                    Read privacy notice
       responses:
         "201":
           description: Policy created with generated checklist
@@ -44,67 +202,65 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Policy"
-              examples:
-                created:
-                  value:
-                    id: "p_123"
-                    name: "Security Verification Protocol"
-                    createdAt: "2026-02-20T20:10:00Z"
-                    checklist:
-                      - id: "c_1"
-                        policyId: "p_123"
-                        text: "Thank you for calling"
-                        order: 1
-                      - id: "c_2"
-                        policyId: "p_123"
-                        text: "Verify caller identity"
-                        order: 2
         "400":
-          description: Invalid payload
-
+          description: Invalid body, field validation error, or empty checklist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                emptyChecklist:
+                  value:
+                    error: Policy text must contain at least one non-empty line for checklist generation
+                validation:
+                  value:
+                    error: "'name' must be at most 200 characters"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
     get:
       tags: [Policies]
-      summary: List policies
+      summary: List all policies (summaries only)
       responses:
         "200":
-          description: Policies list
+          description: Policy summaries
           content:
             application/json:
               schema:
                 type: object
+                required: [policies]
                 properties:
                   policies:
                     type: array
                     items:
                       $ref: "#/components/schemas/PolicySummary"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
 
-  /policies/{policyId}:
+  /api/policies/{policyId}:
     get:
       tags: [Policies]
-      summary: Get a policy with checklist
+      summary: Get a single policy with its checklist
       parameters:
-        - in: path
-          name: policyId
-          required: true
-          schema:
-            type: string
+        - $ref: "#/components/parameters/PolicyId"
       responses:
         "200":
-          description: Policy details
+          description: Policy with checklist
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Policy"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
         "404":
-          description: Policy not found
+          $ref: "#/components/responses/PolicyNotFound"
 
-  /sessions:
+  /api/sessions:
     post:
       tags: [Sessions]
-      summary: Create a monitoring session tied to a policy
+      summary: Create a session for a policy
       description: >
-        Creates a session referencing a policy. This anchors later stories
-        (checklist auto-checking, threat score) while keeping Week 6 focused.
+        Creates an `active` session owned by the authenticated user. The
+        referenced policy must already exist.
       requestBody:
         required: true
         content:
@@ -114,7 +270,7 @@ paths:
             examples:
               example:
                 value:
-                  policyId: "p_123"
+                  policyId: b1e9f0a2-8b2a-4f76-b0ab-0d9a1e2a3c4d
       responses:
         "201":
           description: Session created
@@ -122,20 +278,461 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
         "404":
-          description: Policy not found
+          $ref: "#/components/responses/PolicyNotFound"
+    get:
+      tags: [Sessions]
+      summary: List sessions visible to the caller
+      description: >
+        Agents see only sessions they own. Supervisors see all sessions.
+      parameters:
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [active, ended]
+          description: Optional filter on session status.
+      responses:
+        "200":
+          description: Session summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sessions]
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SessionSummary"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+
+  /api/sessions/{sessionId}/transcript-events:
+    post:
+      tags: [Transcript]
+      summary: Append transcript events and auto-check the checklist
+      description: >
+        Accepts a batch of transcript events (max **50** per request),
+        persists them, runs the checklist auto-matcher over the new text,
+        and returns the current checked-item ids plus a running count of
+        transcript entries. The session must be `active`; otherwise a
+        **409 Conflict** is returned.
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TranscriptEventsRequest"
+            examples:
+              batch:
+                value:
+                  events:
+                    - text: "hello, thanks for calling"
+                      isFinal: true
+                      occurredAt: "2026-04-18T21:32:50.000Z"
+                    - text: "may i verify your identity"
+                      isFinal: true
+                      occurredAt: "2026-04-18T21:33:02.000Z"
+      responses:
+        "200":
+          description: Events ingested
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptIngestResponse"
+        "400":
+          description: Malformed body or validation error (e.g. >50 events, empty text)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                tooMany:
+                  value:
+                    error: "Too many events: maximum is 50"
+                emptyText:
+                  value:
+                    error: "events[0].text: 'text' must be a non-empty string"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/SessionNotFound"
+        "409":
+          $ref: "#/components/responses/SessionNotActive"
+
+  /api/sessions/{sessionId}/frequency:
+    post:
+      tags: [Frequency]
+      summary: Append a vocal-stress frequency snapshot
+      description: >
+        Client-side AudioWorklet emits periodic FFT snapshots (one per
+        analysis window). Each snapshot feeds the frequency component of
+        the composite threat score. Session must be `active` (409 if not).
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FrequencyEventRequest"
+      responses:
+        "200":
+          description: Snapshot persisted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, snapshotId]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  snapshotId:
+                    type: string
+                    format: uuid
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/SessionNotFound"
+        "409":
+          $ref: "#/components/responses/SessionNotActive"
+    get:
+      tags: [Frequency]
+      summary: List all frequency snapshots for a session
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "200":
+          description: Snapshots (chronological)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sessionId, snapshots]
+                properties:
+                  sessionId:
+                    type: string
+                  snapshots:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FrequencySnapshot"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/SessionNotFound"
+
+  /api/sessions/{sessionId}/state:
+    get:
+      tags: [Sessions]
+      summary: Get the full snapshot of a session's current state
+      description: >
+        Returns the session record, the current transcript (entries +
+        concatenated text), the checklist state, frequency snapshots, and
+        the composite threat score. This is the endpoint the `/call` and
+        `/history` UIs poll every 2 seconds.
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "200":
+          description: Session state snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionStateResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/SessionNotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/sessions/{sessionId}/end:
+    post:
+      tags: [Sessions]
+      summary: End a session (idempotent)
+      description: >
+        Marks the session `ended` and records the end timestamp. Safe to
+        call multiple times — a session that is already ended is
+        returned unchanged with `endedAt` preserved.
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "200":
+          description: Session ended (or already ended)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/SessionNotFound"
+
+  /api/assemblyai/token:
+    post:
+      tags: [Transcription]
+      summary: Mint a short-lived AssemblyAI streaming token
+      description: >
+        Calls AssemblyAI's `/v3/token` with the server-side
+        `ASSEMBLYAI_API_KEY` and returns a temporary token the browser
+        uses to open the real-time transcription WebSocket. The server
+        never exposes the master key.
+
+
+        **Known limitation:** this endpoint currently accepts any caller.
+        Tightening it to require auth is tracked in
+        `docs/final/week14-triage.md`.
+      security: []
+      responses:
+        "200":
+          description: Token minted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token, expiresInSeconds]
+                properties:
+                  token:
+                    type: string
+                    description: One-time AssemblyAI streaming token
+                  expiresInSeconds:
+                    type: integer
+                    enum: [60]
+        "500":
+          description: Server is missing `ASSEMBLYAI_API_KEY`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingKey:
+                  value:
+                    error: ASSEMBLYAI_API_KEY not configured
+        "502":
+          description: Upstream AssemblyAI request failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                upstream:
+                  value:
+                    error: "AssemblyAI token request failed: <upstream body>"
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        HS256 JWT issued by `POST /api/auth/login`. Encodes `sub`,
+        `email`, and `role`. 8-hour expiry.
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+      description: >
+        Same JWT as bearerAuth, issued as an `HttpOnly` cookie by
+        `POST /api/auth/login`. Primary transport for browser clients.
+
+  parameters:
+    SessionId:
+      in: path
+      name: sessionId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PolicyId:
+      in: path
+      name: policyId
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Malformed JSON or field validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthenticated:
+      description: Missing or invalid JWT
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            missing:
+              value:
+                error: Authentication required
+            invalid:
+              value:
+                error: Invalid or expired token
+    Forbidden:
+      description: Authenticated but not permitted (session ownership)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            notOwner:
+              value:
+                error: "Forbidden: you do not own this session"
+    SessionNotFound:
+      description: Session not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            notFound:
+              value:
+                error: Session not found
+    PolicyNotFound:
+      description: Policy not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            notFound:
+              value:
+                error: Policy not found
+    SessionNotActive:
+      description: Session is not in `active` state
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            notActive:
+              value:
+                error: Session is not active
+    InternalError:
+      description: Unexpected server error (usually a failed database call)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            internal:
+              value:
+                error: Internal server error
+
   schemas:
-    PolicyUploadRequest:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 1
+
+    LoginResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+          description: HS256 JWT, 8-hour expiry
+        user:
+          type: object
+          required: [id, email, role, name]
+          properties:
+            id:
+              type: string
+            email:
+              type: string
+            role:
+              type: string
+              enum: [agent, supervisor]
+            name:
+              type: string
+
+    HealthResponse:
+      type: object
+      required: [status, uptime, database, env]
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded]
+        uptime:
+          type: integer
+          description: Process uptime in seconds
+        database:
+          type: object
+          required: [status]
+          properties:
+            status:
+              type: string
+              enum: [ok, unreachable]
+            latencyMs:
+              type: integer
+              description: Round-trip latency of `SELECT 1`; omitted when unreachable
+        env:
+          type: object
+          description: Whether each required env var is set (values are never returned)
+          properties:
+            JWT_SECRET:
+              type: string
+              enum: [set, "default (insecure)"]
+            ASSEMBLYAI_API_KEY:
+              type: string
+              enum: [set, missing]
+            DATABASE_URL:
+              type: string
+              enum: [set, missing]
+
+    CreatePolicyRequest:
       type: object
       required: [name, text]
       properties:
         name:
           type: string
+          minLength: 1
+          maxLength: 200
         text:
           type: string
-          description: Plain text policy content
+          minLength: 1
+          maxLength: 50000
+          description: Plain-text policy; each non-empty line becomes a checklist item.
 
     PolicySummary:
       type: object
@@ -143,6 +740,7 @@ components:
       properties:
         id:
           type: string
+          format: uuid
         name:
           type: string
         createdAt:
@@ -151,11 +749,14 @@ components:
 
     Policy:
       type: object
-      required: [id, name, createdAt, checklist]
+      required: [id, name, text, createdAt, checklist]
       properties:
         id:
           type: string
+          format: uuid
         name:
+          type: string
+        text:
           type: string
         createdAt:
           type: string
@@ -171,8 +772,10 @@ components:
       properties:
         id:
           type: string
+          format: uuid
         policyId:
           type: string
+          format: uuid
         text:
           type: string
         order:
@@ -184,15 +787,21 @@ components:
       properties:
         policyId:
           type: string
+          format: uuid
 
     Session:
       type: object
-      required: [id, policyId, status, createdAt]
+      required: [id, policyId, ownerId, status, createdAt]
       properties:
         id:
           type: string
+          format: uuid
         policyId:
           type: string
+          format: uuid
+        ownerId:
+          type: string
+          format: uuid
         status:
           type: string
           enum: [active, ended]
@@ -204,4 +813,205 @@ components:
           format: date-time
           nullable: true
 
-security: []
+    SessionSummary:
+      type: object
+      required: [id, policyId, policyName, ownerId, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        policyId:
+          type: string
+          format: uuid
+        policyName:
+          type: string
+        ownerId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [active, ended]
+        createdAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    TranscriptEvent:
+      type: object
+      required: [text, isFinal, occurredAt]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        isFinal:
+          type: boolean
+          description: AssemblyAI distinguishes interim (partial) vs final turns.
+        occurredAt:
+          type: string
+          format: date-time
+        confidence:
+          type: number
+          format: float
+          nullable: true
+        startMs:
+          type: integer
+          nullable: true
+        endMs:
+          type: integer
+          nullable: true
+
+    TranscriptEventsRequest:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/TranscriptEvent"
+
+    TranscriptEntry:
+      allOf:
+        - $ref: "#/components/schemas/TranscriptEvent"
+        - type: object
+          required: [id, sessionId]
+          properties:
+            id:
+              type: string
+              format: uuid
+            sessionId:
+              type: string
+              format: uuid
+
+    TranscriptIngestResponse:
+      type: object
+      required: [sessionId, transcriptEntryCount, checkedItemIds, latestText]
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        transcriptEntryCount:
+          type: integer
+          description: Running count of persisted entries for this session.
+        checkedItemIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        latestText:
+          type: string
+          description: Latest final-transcript text (or empty).
+
+    FrequencyEventRequest:
+      type: object
+      required:
+        - dominantFrequencyHz
+        - frequencyBins
+        - sampleRateHz
+        - fftSize
+        - binResolutionHz
+      properties:
+        dominantFrequencyHz:
+          type: number
+          minimum: 0
+        frequencyBins:
+          type: array
+          maxItems: 4096
+          items:
+            type: number
+        sampleRateHz:
+          type: number
+          exclusiveMinimum: 0
+        fftSize:
+          type: integer
+          minimum: 1
+        binResolutionHz:
+          type: number
+          exclusiveMinimum: 0
+
+    FrequencySnapshot:
+      allOf:
+        - $ref: "#/components/schemas/FrequencyEventRequest"
+        - type: object
+          required: [id, sessionId, occurredAt]
+          properties:
+            id:
+              type: string
+              format: uuid
+            sessionId:
+              type: string
+              format: uuid
+            occurredAt:
+              type: string
+              format: date-time
+
+    ChecklistStateRow:
+      type: object
+      required: [itemId, text, checked]
+      properties:
+        itemId:
+          type: string
+          format: uuid
+        text:
+          type: string
+        checked:
+          type: boolean
+
+    ThreatScoreBreakdown:
+      type: object
+      required: [overall, frequencyScore, complianceScore, keywordScore, level]
+      properties:
+        overall:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Weighted sum of component scores (35/35/30).
+        frequencyScore:
+          type: number
+          description: Vocal-stress component (weight 0.35).
+        complianceScore:
+          type: number
+          description: Checklist-completion component (weight 0.35).
+        keywordScore:
+          type: number
+          description: Threat-keyword component (weight 0.30).
+        level:
+          type: string
+          enum: [low, medium, high, critical]
+
+    SessionStateResponse:
+      type: object
+      required:
+        - session
+        - transcript
+        - checklistState
+        - frequencySnapshots
+        - threatScore
+      properties:
+        session:
+          $ref: "#/components/schemas/Session"
+        transcript:
+          type: object
+          required: [entries, fullText]
+          properties:
+            entries:
+              type: array
+              items:
+                $ref: "#/components/schemas/TranscriptEntry"
+            fullText:
+              type: string
+        checklistState:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChecklistStateRow"
+        frequencySnapshots:
+          type: array
+          items:
+            $ref: "#/components/schemas/FrequencySnapshot"
+        threatScore:
+          $ref: "#/components/schemas/ThreatScoreBreakdown"
