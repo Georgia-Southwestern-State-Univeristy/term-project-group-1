@@ -5,6 +5,16 @@ Provides live transcription, automated compliance checklists, vocal stress
 analysis, and threat scoring. Graduate Software Engineering project at Georgia
 Southwestern State University.
 
+## 🏁 Reviewer Start Path
+
+For the most accurate assessment of the Sentinel Release Candidate (v0.9), please follow this sequence:
+
+1.  **[Release Candidate Summary](docs/releases/release-candidate.md):** Overview of stable workflows and major differences from the Beta phase.
+2.  **[Architecture Snapshot](docs/final/week13-architecture.md):** View the current-state monolith design and component responsibilities.
+3.  **[User Guide](docs/user-guide.md):** Use the seeded credentials (`agent@sentinel.local`) to execute the core call-assistance workflow.
+4.  **[Final Bug Triage](docs/final/week14-triage.md):** Review our progress on instructor-identified risks (auth hardening, component size).
+5.  **[Project Board](https://github.com/orgs/Georgia-Southwestern-State-Univeristy/projects/):** Evidence of sprint planning and task execution.
+
 ## Core Workflow
 
 1. **Agent logs in** (`/login`) with email/password credentials
@@ -18,25 +28,40 @@ Southwestern State University.
 
 | Layer         | Technology                                                    |
 | ------------- | ------------------------------------------------------------- |
-| Framework     | Next.js 16 (App Router) + React 19 + TypeScript 5             |
-| Styling       | Tailwind CSS v4                                               |
-| Database      | PostgreSQL 15+ via Prisma ORM                                 |
-| Auth          | JWT (HS256) with role-based access control (agent/supervisor) |
+| Framework     | Next.js 15 (App Router) + React 19 + TypeScript 5             |
+| Database      | PostgreSQL 15+ via Prisma ORM (Mandatory)                     |
+| Auth          | JWT (HS256) with role-based access control (Agent/Supervisor) |
 | Transcription | AssemblyAI real-time streaming WebSocket                      |
-| Testing       | Jest 30 + Testing Library                                     |
-| CI            | GitHub Actions (lint, format, typecheck, test, build)         |
+| Logging       | Structured JSON logs with `durationMs` instrumentation        |
 
 ## Quick Start
+
+# 1. Clone and Install
 
 ```bash
 git clone https://github.com/Georgia-Southwestern-State-Univeristy/term-project-group-1.git
 cd term-project-group-1
-nvm use 22
 npm install
-cp .env.example .env.local   # fill in DATABASE_URL and ASSEMBLYAI_API_KEY
-npx prisma db push            # create database tables
-npx prisma db seed            # seed demo users
-npm run dev                   # start dev server → http://localhost:3000
+```
+
+# 2. Configure Environment (Mandatory)
+
+```bash
+cp .env.example .env.local
+# Open .env.local and provide your DATABASE_URL and ASSEMBLYAI_API_KEY
+```
+
+# 3. Initialize Database
+
+```bash
+npx prisma migrate dev       # Applies PostgreSQL schema
+npx prisma db seed           # Seeds demo users (agent@sentinel.local / agent123)
+```
+
+# 4. Launch
+
+```bash
+npm run dev                  # start dev server → http://localhost:3000
 ```
 
 For detailed setup including PostgreSQL installation, Docker option, and
@@ -117,49 +142,30 @@ public/
   worklets/           # AudioWorklet processors (pcm-processor.js)
 ```
 
-## Beta Scope
+## 🏁 Release Candidate Status (v0.2)
 
-### What is Working
+### What is Stable
 
-- **Authentication** — Email/password login with JWT tokens, role-based access control (agent vs. supervisor), session ownership enforcement
-- **Policy management** — Create policies with text, auto-generate compliance checklists
-- **Session lifecycle** — Create, ingest transcript, end, and archive sessions
-- **Real-time transcription** — AssemblyAI WebSocket streaming with live transcript display
-- **Auto-checklist** — Checklist items auto-check when matching phrases appear in transcript
-- **Threat scoring** — Composite score from compliance gaps, keyword detection, and vocal frequency stress analysis
-- **Session history** — Browse ended sessions with full transcript, checklist, and threat score
-- **Input validation** — Zod schemas on all API inputs with structured error messages
-- **Structured logging** — JSON-formatted logs with session context
-- **Reliability** — Error handling on all DB operations, polling failure indicators, WebSocket error messages
+- **Persistent Data Layer:** Full PostgreSQL integration for all sessions and policies.
+- **Hardened Validation:** Unified Zod schemas via `parseRequestBody()` utility.
+- **System Observability:** `/api/health` diagnostics and structured duration logging.
+- **Regression Suite:** 90+ automated tests protecting core workflows.
 
-### What is Intentionally Incomplete
+### Remaining Risks (Targeted for v1.0)
 
-- **Session revocation** — No force-logout or token blacklist (acceptable for single-tenant beta)
-- **WebSocket auto-reconnect** — User must manually restart streaming if connection drops
-- **Rate limiting** — Not implemented; acceptable for single-tenant prototype
-- **MFA** — Not in scope for beta
-- **Supervisor dashboard** — Supervisors can view all sessions but have no dedicated analytics UI
-
-### What is Planned Next
-
-- Auto-reconnect for WebSocket streaming with exponential backoff
-- Supervisor analytics dashboard (aggregate threat scores, team compliance)
-- Cloud deployment (Vercel + managed PostgreSQL)
-- Session export (PDF/CSV reports)
+- **Firefox Compatibility:** Primary audio capture currently restricted to Chromium engines.
+- **Auth Hardening:** Server-side token revocation (deny-listing) upon logout.
+- **Component Decomposition:** Refactoring the monolithic `/call` page to reduce component size.
 
 ## Documentation
 
-| Document                                                     | Description                                 |
-| ------------------------------------------------------------ | ------------------------------------------- |
-| [Deployment Guide](docs/deployment/beta-deploy.md)           | Full setup, run, and first-run walkthrough  |
-| [Quality Summary](docs/beta/week12-quality.md)               | Test counts, CI evidence, coverage analysis |
-| [Known Issues](docs/beta/week12-known-issues.md)             | Prioritized bug triage and technical debt   |
-| [Release Notes](docs/releases/beta-release.md)               | Beta v0.1 release notes                     |
-| [Reliability](docs/beta/week11-reliability.md)               | Risk analysis and fixes from Week 11        |
-| [Authentication](docs/security/auth.md)                      | Auth design, RBAC model, ownership rules    |
-| [Beta Plan](docs/beta/beta-plan.md)                          | Beta release planning                       |
-| [Architecture](docs/architecture/first-pass-architecture.md) | C4 container diagram and design             |
-| [ADR-001](docs/adr/ADR-001.md)                               | Architecture Decision Record: Next.js       |
+| Document                                                   | Description                                     |
+| ---------------------------------------------------------- | ----------------------------------------------- |
+| [User Guide](docs/user-guide.md)                           | Step-by-step Agent/Supervisor walkthrough       |
+| [Admin & Maintenance](docs/admin-guide.md)                 | Reseeding, diagnostics, and recovery            |
+| [Architecture Snapshot](docs/final/week13-architecture.md) | **Current** system diagram and responsibilities |
+| [Final Triage](docs/final/week14-triage.md)                | Ranked list of 8+ remaining release risks       |
+| [Hand-Off Draft](docs/handoff/hand-off-draft.md)           | Maintenance plan for future teams               |
 
 ## Contributing
 
