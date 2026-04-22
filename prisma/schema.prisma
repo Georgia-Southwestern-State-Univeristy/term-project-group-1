@@ -98,3 +98,13 @@ model ChecklistState {
   @@id([sessionId, itemId])
   @@map("checklist_states")
 }
+
+model RevokedToken {
+  jti       String   @id
+  userId    String   @map("user_id")
+  revokedAt DateTime @default(now()) @map("revoked_at")
+  expiresAt DateTime @map("expires_at")
+
+  @@index([expiresAt])
+  @@map("revoked_tokens")
+}
