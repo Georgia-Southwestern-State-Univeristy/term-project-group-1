@@ -134,11 +134,27 @@ export default function DemoPage() {
   const wsRef = useRef<WebSocket | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const workletNodeRef = useRef<AudioWorkletNode | null>(null);
   const turnsRef = useRef<Record<number, string>>({} as Record<number, string>);
   const postedTurnsRef = useRef(new Set<number>());
+  const maxTurnSeenRef = useRef(-1);
   const analyserIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
     null
   );
+
+  // resilience / reconnect state
+  const MAX_RECONNECT_ATTEMPTS = 5;
+  const WATCHDOG_MS = 15_000;
+  const RECONNECT_BASE_MS = 1_000;
+  const RECONNECT_CAP_MS = 30_000;
+  const isTerminatingRef = useRef(false);
+  const retryCountRef = useRef(0);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const watchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [connectionState, setConnectionState] = useState<
+    "idle" | "connecting" | "open" | "reconnecting" | "failed"
+  >("idle");
+  const [retryAttempt, setRetryAttempt] = useState(0);
 
   /* ── API helpers ─────────────────────────────── */
 
@@ -244,23 +260,254 @@ export default function DemoPage() {
     setSession((s) => (s ? { ...s, status: "ended" } : s));
   }
 
-  /* ── start/stop streaming ────────────────────── */
+  /* ── resilience helpers ──────────────────────── */
 
-  async function startStreaming() {
-    if (!session || session.status !== "active") return;
-    setError(null);
+  function clearWatchdog() {
+    if (watchdogRef.current) {
+      clearTimeout(watchdogRef.current);
+      watchdogRef.current = null;
+    }
+  }
 
-    // 1. Get temp token
+  function armWatchdog() {
+    clearWatchdog();
+    watchdogRef.current = setTimeout(() => {
+      const ws = wsRef.current;
+      // If no message arrived in WATCHDOG_MS while the socket was open,
+      // treat the stream as stale. Close with a non-standard code so the
+      // onclose handler routes through the reconnect path.
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.close(4000, "watchdog");
+      }
+    }, WATCHDOG_MS);
+  }
+
+  function scheduleReconnect() {
+    if (isTerminatingRef.current) return;
+    if (retryCountRef.current >= MAX_RECONNECT_ATTEMPTS) {
+      setConnectionState("failed");
+      setStreaming(false);
+      setError(
+        `Connection lost after ${MAX_RECONNECT_ATTEMPTS} reconnect attempts. Click Resume to try again.`
+      );
+      return;
+    }
+    const backoff = Math.min(
+      RECONNECT_CAP_MS,
+      RECONNECT_BASE_MS * 2 ** retryCountRef.current
+    );
+    retryCountRef.current += 1;
+    setRetryAttempt(retryCountRef.current);
+    setConnectionState("reconnecting");
+    reconnectTimerRef.current = setTimeout(() => {
+      connectWebSocket();
+    }, backoff);
+  }
+
+  /* ── audio pipeline (set up once, survives reconnects) ── */
+
+  async function setupAudioPipeline(mediaStream: MediaStream): Promise<void> {
+    const audioCtx = new AudioContext({ sampleRate: 16000 });
+    audioCtxRef.current = audioCtx;
+    await audioCtx.audioWorklet.addModule("/worklets/pcm-processor.js");
+
+    const source = audioCtx.createMediaStreamSource(mediaStream);
+    const workletNode = new AudioWorkletNode(audioCtx, "pcm-processor");
+    workletNodeRef.current = workletNode;
+
+    // Insert AnalyserNode for real-time FFT (PCM → frequency Hz)
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    source.connect(analyser);
+    analyser.connect(workletNode);
+    workletNode.connect(audioCtx.destination);
+
+    // Sample frequency data every 250ms — independent of WS lifecycle.
+    const freqDataArray = new Float32Array(analyser.frequencyBinCount);
+    const sampleRate = audioCtx.sampleRate;
+    const fftSize = analyser.fftSize;
+    const binResolution = sampleRate / fftSize;
+    const numBands = 32;
+    const binsPerBand = Math.floor(analyser.frequencyBinCount / numBands);
+
+    analyserIntervalRef.current = setInterval(() => {
+      analyser.getFloatFrequencyData(freqDataArray);
+
+      let maxDb = -Infinity;
+      let maxBin = 0;
+      for (let i = 1; i < freqDataArray.length; i++) {
+        if (freqDataArray[i] > maxDb) {
+          maxDb = freqDataArray[i];
+          maxBin = i;
+        }
+      }
+      const dominant = maxBin * binResolution;
+      setDominantHz(dominant);
+
+      const bands: number[] = [];
+      for (let b = 0; b < numBands; b++) {
+        let sum = 0;
+        for (let i = 0; i < binsPerBand; i++) {
+          sum += freqDataArray[b * binsPerBand + i];
+        }
+        bands.push(sum / binsPerBand);
+      }
+      setFrequencyBands(bands);
+
+      if (session) {
+        fetch(`/api/sessions/${session.id}/frequency`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            dominantFrequencyHz: dominant,
+            frequencyBins: bands,
+            sampleRateHz: sampleRate,
+            fftSize,
+            binResolutionHz: binResolution,
+          }),
+        }).catch(() => {
+          // Silently ignore — must not affect streaming
+        });
+      }
+    }, 250);
+
+    // Buffer PCM → WS. Reads wsRef at each tick so the handler survives
+    // WebSocket reconnects without re-binding.
+    let audioBufferQueue = new Int16Array(0);
+    workletNode.port.onmessage = (event: MessageEvent) => {
+      const ws = wsRef.current;
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+      const currentBuffer = new Int16Array(
+        event.data.audio_data as ArrayBuffer
+      );
+      audioBufferQueue = mergeBuffers(audioBufferQueue, currentBuffer);
+
+      const bufferDuration =
+        (audioBufferQueue.length / audioCtx.sampleRate) * 1000;
+
+      if (bufferDuration >= 100) {
+        const totalSamples = Math.floor(audioCtx.sampleRate * 0.1);
+        const finalBuffer = new Uint8Array(
+          audioBufferQueue.subarray(0, totalSamples).buffer
+        );
+        audioBufferQueue = audioBufferQueue.subarray(totalSamples);
+        ws.send(finalBuffer);
+      }
+    };
+  }
+
+  /* ── WebSocket connect (re-runs on reconnect) ── */
+
+  async function connectWebSocket(): Promise<void> {
+    if (!session) return;
+    setConnectionState(
+      retryCountRef.current === 0 ? "connecting" : "reconnecting"
+    );
+
+    // Mint a fresh token every attempt — tokens expire after 60 s.
     const tokenRes = await fetch("/api/assemblyai/token", { method: "POST" });
     if (!tokenRes.ok) {
       setError(
         `Token request failed: ${tokenRes.status}. Is ASSEMBLYAI_API_KEY set?`
       );
+      scheduleReconnect();
       return;
     }
     const { token } = await tokenRes.json();
 
-    // 2. Request mic permission first
+    const ws = new WebSocket(
+      `wss://streaming.assemblyai.com/v3/ws?sample_rate=16000&formatted_finals=true&token=${token}`
+    );
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      setStreaming(true);
+      setConnectionState("open");
+      retryCountRef.current = 0;
+      setRetryAttempt(0);
+      setError(null);
+      armWatchdog();
+    };
+
+    ws.onmessage = (event: MessageEvent) => {
+      armWatchdog();
+      const msg = JSON.parse(event.data);
+      if (msg.type !== "Turn") return;
+
+      const { turn_order, transcript, end_of_turn } = msg;
+      const turns = turnsRef.current;
+      const posted = postedTurnsRef.current;
+      turns[turn_order as number] = transcript;
+
+      const sortedKeys = Object.keys(turns)
+        .sort((a, b) => Number(a) - Number(b))
+        .map(Number);
+
+      if (sortedKeys.length > FRONTEND_TURN_LIMIT) {
+        const toRemove = sortedKeys.slice(
+          0,
+          sortedKeys.length - FRONTEND_TURN_LIMIT
+        );
+        for (const k of toRemove) {
+          delete turns[k];
+          posted.delete(k);
+        }
+        sortedKeys.splice(0, sortedKeys.length - FRONTEND_TURN_LIMIT);
+      }
+
+      const fullText = sortedKeys.map((k) => turns[k]).join(" ");
+      setTranscriptText(fullText);
+
+      if (turn_order > maxTurnSeenRef.current) {
+        for (let t = maxTurnSeenRef.current; t >= 0; t--) {
+          if (!posted.has(t) && turns[t]) {
+            posted.add(t);
+            postTranscriptEvent(session.id, turns[t]);
+          }
+        }
+        maxTurnSeenRef.current = turn_order;
+      }
+
+      if (end_of_turn && transcript && !posted.has(turn_order)) {
+        posted.add(turn_order);
+        postTranscriptEvent(session.id, transcript);
+      }
+    };
+
+    ws.onerror = () => {
+      // Let onclose drive the recovery decision — errors always precede close.
+    };
+
+    ws.onclose = (event) => {
+      clearWatchdog();
+      if (isTerminatingRef.current) {
+        setStreaming(false);
+        setConnectionState("idle");
+        return;
+      }
+      // 1000 = normal, 1005 = no code. Treat both as clean shutdown.
+      if (event.code === 1000 || event.code === 1005) {
+        setStreaming(false);
+        setConnectionState("idle");
+        return;
+      }
+      scheduleReconnect();
+    };
+  }
+
+  /* ── start/stop/resume streaming ─────────────── */
+
+  async function startStreaming() {
+    if (!session || session.status !== "active") return;
+    setError(null);
+    isTerminatingRef.current = false;
+    retryCountRef.current = 0;
+    setRetryAttempt(0);
+    maxTurnSeenRef.current = -1;
+    turnsRef.current = {};
+    postedTurnsRef.current = new Set();
+
     let mediaStream: MediaStream;
     try {
       mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -270,186 +517,34 @@ export default function DemoPage() {
     }
     streamRef.current = mediaStream;
 
-    // 3. Open WebSocket with sample_rate param
-    const ws = new WebSocket(
-      `wss://streaming.assemblyai.com/v3/ws?sample_rate=16000&formatted_finals=true&token=${token}`
-    );
-    wsRef.current = ws;
+    try {
+      await setupAudioPipeline(mediaStream);
+    } catch (err) {
+      setError(`Audio setup failed: ${err}`);
+      await stopStreaming();
+      return;
+    }
 
-    // Reset turn tracking
-    turnsRef.current = {};
-    postedTurnsRef.current = new Set();
-    let maxTurnSeen = -1;
+    await connectWebSocket();
+  }
 
-    ws.onopen = async () => {
-      setStreaming(true);
-
-      try {
-        // 4. AudioContext at 16kHz — browser resamples natively
-        const audioCtx = new AudioContext({
-          sampleRate: 16000,
-        });
-        audioCtxRef.current = audioCtx;
-        await audioCtx.audioWorklet.addModule("/worklets/pcm-processor.js");
-
-        const source = audioCtx.createMediaStreamSource(mediaStream);
-        const workletNode = new AudioWorkletNode(audioCtx, "pcm-processor");
-
-        // Insert AnalyserNode for real-time FFT (PCM → frequency Hz)
-        const analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 2048; // 1024 bins, ~7.8 Hz resolution at 16kHz
-        source.connect(analyser);
-        analyser.connect(workletNode);
-        workletNode.connect(audioCtx.destination);
-
-        // Sample frequency data every 250ms
-        const freqDataArray = new Float32Array(analyser.frequencyBinCount);
-        const sampleRate = audioCtx.sampleRate;
-        const fftSize = analyser.fftSize;
-        const binResolution = sampleRate / fftSize;
-        const numBands = 32;
-        const binsPerBand = Math.floor(analyser.frequencyBinCount / numBands);
-
-        analyserIntervalRef.current = setInterval(() => {
-          analyser.getFloatFrequencyData(freqDataArray);
-
-          // Find dominant frequency (bin with max dB)
-          let maxDb = -Infinity;
-          let maxBin = 0;
-          for (let i = 1; i < freqDataArray.length; i++) {
-            if (freqDataArray[i] > maxDb) {
-              maxDb = freqDataArray[i];
-              maxBin = i;
-            }
-          }
-          const dominant = maxBin * binResolution;
-          setDominantHz(dominant);
-
-          // Condense to 32 bands (average dB per band)
-          const bands: number[] = [];
-          for (let b = 0; b < numBands; b++) {
-            let sum = 0;
-            for (let i = 0; i < binsPerBand; i++) {
-              sum += freqDataArray[b * binsPerBand + i];
-            }
-            bands.push(sum / binsPerBand);
-          }
-          setFrequencyBands(bands);
-
-          // Fire-and-forget POST to backend
-          if (session) {
-            fetch(`/api/sessions/${session.id}/frequency`, {
-              method: "POST",
-              headers: authHeaders(),
-              body: JSON.stringify({
-                dominantFrequencyHz: dominant,
-                frequencyBins: bands,
-                sampleRateHz: sampleRate,
-                fftSize,
-                binResolutionHz: binResolution,
-              }),
-            }).catch(() => {
-              // Silently ignore — must not affect streaming
-            });
-          }
-        }, 250);
-
-        // 5. Buffer audio to ~100ms chunks before sending
-        let audioBufferQueue = new Int16Array(0);
-
-        workletNode.port.onmessage = (event: MessageEvent) => {
-          if (ws.readyState !== WebSocket.OPEN) return;
-
-          const currentBuffer = new Int16Array(
-            event.data.audio_data as ArrayBuffer
-          );
-          audioBufferQueue = mergeBuffers(audioBufferQueue, currentBuffer);
-
-          const bufferDuration =
-            (audioBufferQueue.length / audioCtx.sampleRate) * 1000;
-
-          if (bufferDuration >= 100) {
-            const totalSamples = Math.floor(audioCtx.sampleRate * 0.1);
-            const finalBuffer = new Uint8Array(
-              audioBufferQueue.subarray(0, totalSamples).buffer
-            );
-            audioBufferQueue = audioBufferQueue.subarray(totalSamples);
-            ws.send(finalBuffer);
-          }
-        };
-      } catch (err) {
-        setError(`Audio setup failed: ${err}`);
-        ws.close();
-        setStreaming(false);
-      }
-    };
-
-    // 6. Handle v3 Turn messages
-    ws.onmessage = (event: MessageEvent) => {
-      const msg = JSON.parse(event.data);
-      if (msg.type === "Turn") {
-        const { turn_order, transcript, end_of_turn } = msg;
-        const turns = turnsRef.current;
-        const posted = postedTurnsRef.current;
-        turns[turn_order as number] = transcript;
-
-        const sortedKeys = Object.keys(turns)
-          .sort((a, b) => Number(a) - Number(b))
-          .map(Number);
-
-        // Prune oldest turns to keep memory stable
-        if (sortedKeys.length > FRONTEND_TURN_LIMIT) {
-          const toRemove = sortedKeys.slice(
-            0,
-            sortedKeys.length - FRONTEND_TURN_LIMIT
-          );
-          for (const k of toRemove) {
-            delete turns[k];
-            posted.delete(k);
-          }
-          sortedKeys.splice(0, sortedKeys.length - FRONTEND_TURN_LIMIT);
-        }
-
-        const fullText = sortedKeys.map((k) => turns[k]).join(" ");
-        setTranscriptText(fullText);
-
-        // Post previous turns that ended implicitly (new turn_order appeared)
-        if (turn_order > maxTurnSeen) {
-          for (let t = maxTurnSeen; t >= 0; t--) {
-            if (!posted.has(t) && turns[t]) {
-              posted.add(t);
-              postTranscriptEvent(session.id, turns[t]);
-            }
-          }
-          maxTurnSeen = turn_order;
-        }
-
-        // Post when AssemblyAI explicitly marks turn as ended
-        if (end_of_turn && transcript && !posted.has(turn_order)) {
-          posted.add(turn_order);
-          postTranscriptEvent(session.id, transcript);
-        }
-      }
-    };
-
-    ws.onerror = () => {
-      setError(
-        "WebSocket disconnected. Stop streaming and try again, or check your network connection."
-      );
-      setStreaming(false);
-    };
-
-    ws.onclose = (event) => {
-      setStreaming(false);
-      if (event.code !== 1000 && event.code !== 1005) {
-        setError(
-          "Streaming connection closed unexpectedly. You may restart streaming."
-        );
-      }
-    };
+  async function resumeStreaming() {
+    setError(null);
+    retryCountRef.current = 0;
+    setRetryAttempt(0);
+    isTerminatingRef.current = false;
+    await connectWebSocket();
   }
 
   async function stopStreaming() {
+    isTerminatingRef.current = true;
+
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
+    clearWatchdog();
+
     // Flush any unposted turns to backend
     if (session) {
       const turns = turnsRef.current;
@@ -463,34 +558,32 @@ export default function DemoPage() {
       }
     }
 
-    // Stop frequency sampling
     if (analyserIntervalRef.current) {
       clearInterval(analyserIntervalRef.current);
       analyserIntervalRef.current = null;
     }
 
-    // Send terminate and close WS
     if (wsRef.current) {
       if (wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ type: "Terminate" }));
       }
-      wsRef.current.close();
+      wsRef.current.close(1000);
       wsRef.current = null;
     }
 
-    // Stop audio tracks
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
 
-    // Close AudioContext
     if (audioCtxRef.current) {
       await audioCtxRef.current.close();
       audioCtxRef.current = null;
     }
 
+    workletNodeRef.current = null;
     setStreaming(false);
+    setConnectionState("idle");
     await endSession();
   }
 
@@ -526,6 +619,34 @@ export default function DemoPage() {
       {error && (
         <div className="mb-4 rounded bg-red-100 p-3 text-sm text-red-800">
           {error}
+        </div>
+      )}
+
+      {connectionState === "reconnecting" && (
+        <div
+          role="status"
+          className="mb-4 rounded border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800"
+        >
+          Reconnecting to transcription stream… attempt {retryAttempt}/
+          {MAX_RECONNECT_ATTEMPTS}
+        </div>
+      )}
+
+      {connectionState === "failed" && (
+        <div
+          role="alert"
+          className="mb-4 flex items-center justify-between rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800"
+        >
+          <span>
+            Connection lost after {MAX_RECONNECT_ATTEMPTS} attempts. Check your
+            network and resume when ready.
+          </span>
+          <button
+            onClick={resumeStreaming}
+            className="ml-3 rounded bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
+          >
+            Resume
+          </button>
         </div>
       )}
 
