@@ -119,7 +119,16 @@ export default function DemoPage() {
     };
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+        headers: authHeaders(),
+      });
+    } catch {
+      // Network failure shouldn't trap the user on /demo — still clear client state.
+    }
     localStorage.removeItem("token");
     document.cookie = "token=; Path=/; Max-Age=0";
     window.dispatchEvent(new Event("storage"));

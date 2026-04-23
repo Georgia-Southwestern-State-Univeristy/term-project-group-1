@@ -1,7 +1,8 @@
-import { createHash } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { SignJWT, jwtVerify } from "jose";
 import { NextResponse } from "next/server";
 import { Session, User, UserRole } from "@/lib/domain/types";
+import { isTokenRevoked } from "@/lib/repositories/revokedTokenRepo";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "dev-secret-change-me-in-production"
@@ -21,20 +22,38 @@ export async function signToken(user: User): Promise<string> {
   return new SignJWT({ email: user.email, role: user.role })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(user.id)
+    .setJti(randomUUID())
     .setIssuedAt()
     .setExpirationTime(TOKEN_EXPIRY)
     .sign(JWT_SECRET);
 }
 
+export interface VerifiedPayload {
+  sub: string;
+  email: string;
+  role: UserRole;
+  jti: string;
+  exp: number;
+}
+
 export async function verifyToken(
   token: string
-): Promise<{ sub: string; email: string; role: UserRole } | null> {
+): Promise<VerifiedPayload | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
+    if (
+      typeof payload.sub !== "string" ||
+      typeof payload.jti !== "string" ||
+      typeof payload.exp !== "number"
+    ) {
+      return null;
+    }
     return {
-      sub: payload.sub as string,
+      sub: payload.sub,
       email: payload.email as string,
       role: payload.role as UserRole,
+      jti: payload.jti,
+      exp: payload.exp,
     };
   } catch {
     return null;
@@ -45,9 +64,11 @@ export interface AuthResult {
   userId: string;
   email: string;
   role: UserRole;
+  jti: string;
+  exp: number;
 }
 
-export type AuthError = "missing_token" | "invalid_token";
+export type AuthError = "missing_token" | "invalid_token" | "revoked_token";
 
 export async function authenticateRequest(
   request: Request
@@ -76,9 +97,19 @@ export async function authenticateRequest(
     return { success: false, error: "invalid_token" };
   }
 
+  if (await isTokenRevoked(payload.jti)) {
+    return { success: false, error: "revoked_token" };
+  }
+
   return {
     success: true,
-    auth: { userId: payload.sub, email: payload.email, role: payload.role },
+    auth: {
+      userId: payload.sub,
+      email: payload.email,
+      role: payload.role,
+      jti: payload.jti,
+      exp: payload.exp,
+    },
   };
 }
 
@@ -86,6 +117,12 @@ export function authErrorResponse(error: AuthError): NextResponse {
   if (error === "missing_token") {
     return NextResponse.json(
       { error: "Authentication required" },
+      { status: 401 }
+    );
+  }
+  if (error === "revoked_token") {
+    return NextResponse.json(
+      { error: "Token has been revoked" },
       { status: 401 }
     );
   }

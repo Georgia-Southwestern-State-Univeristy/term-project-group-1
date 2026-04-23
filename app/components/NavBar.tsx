@@ -34,7 +34,18 @@ export default function NavBar() {
 
   if (pathname === "/login") return null;
 
-  function handleLogout() {
+  async function handleLogout() {
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+    } catch {
+      // Swallow — client-side state still needs to clear so the user can leave.
+    }
     localStorage.removeItem("token");
     document.cookie = "token=; Path=/; Max-Age=0";
     window.dispatchEvent(new Event("storage"));
