@@ -50,7 +50,7 @@ Sentinel is built as a **Next.js monolith (App Router)**.
 
 ## 5. Known Issues & Constraints
 
-- **Browser Support:** Audio capture is restricted to Chromium-based engines (Chrome/Edge) due to specific AudioWorklet requirements; Firefox is supported.
+- **Browser Support:** Audio capture is supported in all modern evergreen browsers (Chrome, Edge, Firefox) via the Web Audio API's AudioWorklet interface. Safari is untested.
 - **Auth Hardening:** Server-side token revocation is currently deferred; logouts clear client state but do not invalidate the JWT server-side.
 - **Performance:** The `/call` page utilizes HTTP polling every 2 seconds rather than a server-push channel (SSE/WebSocket), which may impact scaling under high load.
 
