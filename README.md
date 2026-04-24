@@ -7,7 +7,7 @@ Southwestern State University.
 
 ## 🏁 Reviewer Start Path
 
-For the most accurate assessment of the Sentinel Release Candidate (v0.9), please follow this sequence:
+For the most accurate assessment of the Sentinel Final Release (v1.0), please follow this sequence:
 
 1.  **[Release Candidate Summary](docs/releases/release-candidate.md):** Overview of stable workflows and major differences from the Beta phase.
 2.  **[Architecture Snapshot](docs/final/week13-architecture.md):** View the current-state monolith design and component responsibilities.
@@ -47,14 +47,14 @@ npm install
 # 2. Configure Environment (Mandatory)
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 # Open .env.local and provide your DATABASE_URL and ASSEMBLYAI_API_KEY
 ```
 
 # 3. Initialize Database
 
 ```bash
-npx prisma migrate dev       # Applies PostgreSQL schema
+npx prisma migrate deploy      # Applies PostgreSQL schema
 npx prisma db seed           # Seeds demo users (agent@sentinel.local / agent123)
 ```
 
@@ -75,7 +75,7 @@ step-by-step first-run walkthrough, see the
 | `npm run dev`          | Start Next.js dev server (port 3000)      |
 | `npm run build`        | Production build                          |
 | `npm start`            | Start production server (run build first) |
-| `npm test`             | Run Jest test suite (82 tests)            |
+| `npm test`             | Run Jest test suite (109 tests)           |
 | `npm run test:watch`   | Re-run tests on file changes              |
 | `npm run lint`         | ESLint check                              |
 | `npm run format`       | Auto-fix formatting (Prettier)            |
@@ -150,9 +150,6 @@ public/
 - **Hardened Validation:** Unified Zod schemas via `parseRequestBody()` utility.
 - **System Observability:** `/api/health` diagnostics and structured duration logging.
 - **Regression Suite:** 90+ automated tests protecting core workflows.
-
-### Remaining Risks (Targeted for v1.0)
-
 - **Firefox Compatibility:** Primary audio capture currently restricted to Chromium engines.
 - **Auth Hardening:** Server-side token revocation (deny-listing) upon logout.
 - **Component Decomposition:** Refactoring the monolithic `/call` page to reduce component size.
@@ -165,7 +162,7 @@ public/
 | [Admin & Maintenance](docs/admin-guide.md)                 | Reseeding, diagnostics, and recovery            |
 | [Architecture Snapshot](docs/final/week13-architecture.md) | **Current** system diagram and responsibilities |
 | [Final Triage](docs/final/week14-triage.md)                | Ranked list of 8+ remaining release risks       |
-| [Hand-Off Draft](docs/handoff/hand-off-draft.md)           | Maintenance plan for future teams               |
+| [Hand-Off Draft](docs/handoff/hand-off.md)                 | Maintenance plan for future teams               |
 
 ## Contributing
 
