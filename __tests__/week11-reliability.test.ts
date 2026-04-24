@@ -67,7 +67,13 @@ describe("Full session lifecycle workflow", () => {
     }
 
     // 6. List sessions via history — ended session must appear
-    const auth = { userId: AGENT_USER_ID, email: "", role: "agent" as const };
+    const auth = {
+      userId: AGENT_USER_ID,
+      email: "",
+      role: "agent" as const,
+      jti: "test-jti",
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    };
     const sessions = await listSessionsForUser(auth, "ended");
     const found = sessions.find((s) => s.id === session.id);
     expect(found).toBeDefined();

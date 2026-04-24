@@ -14,7 +14,7 @@ const config: Config = {
   testEnvironment: "jest-environment-jsdom",
   moduleNameMapper: {
     "^@/lib/db$": `${ROOT}/lib/__mocks__/db.ts`,
-    "^@/lib/repositories/(sessionRepo|policyRepo|transcriptRepo|checklistStateRepo|frequencyRepo|userRepo|seedUsers)$": `${ROOT}/lib/repositories/__test-impl__/$1`,
+    "^@/lib/repositories/(sessionRepo|policyRepo|transcriptRepo|checklistStateRepo|frequencyRepo|userRepo|seedUsers|revokedTokenRepo)$": `${ROOT}/lib/repositories/__test-impl__/$1`,
     "^@/(.*)$": `${ROOT}/$1`,
   },
   testPathIgnorePatterns: ["<rootDir>/.next/", "<rootDir>/node_modules/"],
